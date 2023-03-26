@@ -67,7 +67,7 @@ int receive_job(int new_socket, Job* job){
     // Check for end of jobs signal
     if (job->burst == -1 && job->priority == -1) {
         printf("Received end of jobs signal\n");
-        exit(EXIT_SUCCESS);
+        return 0;
     }
     return 1;
 }
@@ -82,16 +82,10 @@ int main(int argc, char const *argv[]) {
     init_server_address(&address);
     bind_socket_to_address(server_fd, address);
     listen_for_incoming_connections(server_fd, 3);
+    accept_incoming_connection(server_fd, address, &new_socket, &addrlen);
 
-    while(1){
-        accept_incoming_connection(server_fd, address, &new_socket, &addrlen);
-        //receive_job(new_socket, &job);
-        //printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
-        while(receive_job(new_socket, &job) == 1) {
-            printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
-        }
-
-        close(new_socket); // closing the connected socket
+    while(receive_job(new_socket, &job)) {
+        printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
     }
 
     close(new_socket); // closing the connected socket

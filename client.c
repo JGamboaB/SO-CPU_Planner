@@ -40,7 +40,7 @@ void send_job(int sock_fd, Job job) {
         printf("Send failed\n");
         exit(EXIT_FAILURE);
     }
-    printf("Struct sent\n");
+    printf("Job sent\n");
 }
 
 int main(int argc, char const *argv[]) {
