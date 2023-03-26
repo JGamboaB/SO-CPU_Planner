@@ -48,7 +48,30 @@ int main(int argc, char const *argv[]) {
     struct sockaddr_in serv_addr;
     init_server_address(&serv_addr);
     connect_to_server(sock_fd, serv_addr);
-    Job job = {10,1};
-    send_job(sock_fd, job);
+
+    int op = 1, burst, priority;
+
+    while(op == 1){
+        printf("\n[0] Exit\t[1] Send Job: ");
+        scanf("%d", &op);
+
+        if (op!=1)
+            break;
+
+        printf("\nburst: ");
+        scanf("%d", &burst);
+
+        printf("\npriority: ");
+        scanf("%d", &priority);
+
+        Job job = {burst, priority};
+        send_job(sock_fd, job);
+    }
+
+    Job end = {-1,-1};
+    send_job(sock_fd, end);
+
+    close(sock_fd);
+
     return 0;
 }

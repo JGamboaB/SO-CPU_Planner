@@ -58,11 +58,18 @@ void accept_incoming_connection(int server_fd, struct sockaddr_in address, int* 
     }
 }
 
-void receive_job(int new_socket, Job* job){
+int receive_job(int new_socket, Job* job){
     if (recv(new_socket, job, sizeof(Job), 0) == -1) {
         printf("Receive failed\n");
         exit(EXIT_FAILURE);
+    } 
+
+    // Check for end of jobs signal
+    if (job->burst == -1 && job->priority == -1) {
+        printf("Received end of jobs signal\n");
+        exit(EXIT_SUCCESS);
     }
+    return 1;
 }
 
 int main(int argc, char const *argv[]) {
@@ -75,10 +82,20 @@ int main(int argc, char const *argv[]) {
     init_server_address(&address);
     bind_socket_to_address(server_fd, address);
     listen_for_incoming_connections(server_fd, 3);
-    accept_incoming_connection(server_fd, address, &new_socket, &addrlen);
-    receive_job(new_socket, &job);
 
-    printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
+    while(1){
+        accept_incoming_connection(server_fd, address, &new_socket, &addrlen);
+        //receive_job(new_socket, &job);
+        //printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
+        while(receive_job(new_socket, &job) == 1) {
+            printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
+        }
+
+        close(new_socket); // closing the connected socket
+    }
+
+    close(new_socket); // closing the connected socket
+    shutdown(server_fd, SHUT_RDWR); // closing the listening socket
 
     return 0;
 }
