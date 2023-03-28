@@ -12,10 +12,14 @@
 
 #define PORT 8080
 
-// global pid 
-// pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+// global pid 
 static _Atomic int pid_count = 0;
+// JobTr
+typedef struct JobTr{
+    int sock_fd;                // socket
+} JobTr;
+pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int create_server_socket(){
     int server_fd = 0;
@@ -67,32 +71,52 @@ void accept_incoming_connection(int server_fd, struct sockaddr_in address, int* 
     }
 }
 
-int receive_job(int new_socket, Job* job){
-    if (recv(new_socket, job, sizeof(Job), 0) == -1) {
-        printf("Receive failed\n");
-        exit(EXIT_FAILURE);
-    } 
-    //add critical section for incrementing pid
-    pid_count++;
-    // notificar al cliente que llego la informacion 
-    if (send(new_socket, &pid_count, sizeof(pid_count), 0) < 0) {
-        printf("Send failed\n");
-        exit(EXIT_FAILURE);
-    }
+void *receive_job(void *arg){
+    JobTr *jow = (JobTr *)arg;
+    int new_socket = jow->sock_fd;
+    // Receive job from client always
+    while(true) {
+        Job *job = malloc(sizeof(Job));
+        if (recv(new_socket, job, sizeof(Job), 0) == -1) {
+            printf("Receive failed job\n");            
+        } 
+        else{
+            printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
 
-    // Check for end of jobs signal
-    if (job->burst == -1 && job->priority == -1) {
-        printf("Received end of jobs signal\n");
-        return 0;
-    }
-    return 1;
+            // here you need to add to the ready queue
+
+            //add critical section for incrementing pid like example
+            pthread_mutex_lock(&cpu_mutex);
+            pid_count++;
+            pthread_mutex_unlock(&cpu_mutex);
+
+            // notify client of the pid
+            if (send(new_socket, &pid_count, sizeof(pid_count), 0) < 0) {
+                printf("Send failed pid\n");
+            }
+        }
+        
+
+    }    
+	pthread_detach(pthread_self());
 }
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char **argv) {
+
+    if(argc != 2){
+		printf("\nERROR: Missing Algorithm argument");
+		printf("\nExample run: ./server FIFO\n");
+        printf("\nExample run: ./server SJF\n");
+        printf("\nExample run: ./server HPF\n");
+        printf("\nExample run: ./server RR\n"); //Round Robin
+		return EXIT_FAILURE;
+	}
+
+	char *algorithm = argv[1];    
+
     int server_fd, new_socket; // Socket descriptors
     struct sockaddr_in address; // Client Address
     int addrlen = sizeof(address);
-    Job job; // Define instance of Job struct
 
     server_fd = create_server_socket();
     init_server_address(&address);
@@ -100,8 +124,30 @@ int main(int argc, char const *argv[]) {
     listen_for_incoming_connections(server_fd, 3);
     accept_incoming_connection(server_fd, address, &new_socket, &addrlen);
 
-    while(receive_job(new_socket, &job)) {
-        printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
+
+    pthread_t jobs_thread;
+    JobTr *jow = (JobTr *)malloc(sizeof(JobTr));
+    jow->sock_fd = new_socket;
+    if(pthread_create(&jobs_thread, NULL, &receive_job, (void*)jow) != 0){
+        printf("\e[91;103;1m Error pthread send  proc\e[0m\n");
+        return EXIT_FAILURE;
+    }
+    
+    // cases for the different algorithms and compare the text
+    if (strcmp(algorithm, "FIFO") == 0) {
+        printf("FIFO\n");
+    } else if (strcmp(algorithm, "SJF") == 0) {
+        printf("SJF\n");
+    } else if (strcmp(algorithm, "HPF") == 0) {
+        printf("HPF\n");
+    } else if (strcmp(algorithm, "RR") == 0) {
+        printf("RR\n");
+    } else {
+        printf("Invalid algorithm\n");
+    }
+
+    while(true){
+        sleep(1);
     }
 
     close(new_socket); // closing the connected socket
@@ -109,8 +155,6 @@ int main(int argc, char const *argv[]) {
 
     return 0;
 }
-
-// hacer un menu para seleccionar el modo de ejecucion
 
 // desplegar el ready queue
 
