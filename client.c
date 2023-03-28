@@ -133,7 +133,7 @@ void *send_procs(void *arg){
     Procs *procs = (Procs *)arg;
     while (flag == 0) {
         sleep(rand() % procs->rate + 1); // 1 - rate segs
-        Job job = {rand() % procs->burst + 1, rand() % 5 + 1};
+        Job job = {rand() % procs->maxBu + 1, rand() % 5 + 1};
         send_job_aut(procs->sock_fd, job);
     }
     flag = 0;    
@@ -157,7 +157,7 @@ void auto_mode(int sock_fd){
 
     if(pthread_create(&proc_thread, NULL, &send_procs, (void*)procs) != 0){
 		printf("\e[91;103;1m Error pthread\e[0m\n");
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 }
 

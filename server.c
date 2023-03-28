@@ -13,6 +13,8 @@
 #include <signal.h>
 #include <errno.h>   // for errno
 
+#include "jobscheduler.h" // Job Scheduler 
+
 #define PORT 8080
 
 
@@ -39,6 +41,7 @@ typedef struct Connection{
 } Connection;
 
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
+ReadyQueue RQ = {NULL, NULL};
 
 int create_server_socket(){
     int server_fd = 0;
@@ -96,7 +99,7 @@ void *handle_connection(void *arg) {
     int sock_fd = connection->sock_fd;
     int new_socket = connection->new_socket;
     struct Win *win = connection->win;
-
++
     while(true) {
         Job *job = malloc(sizeof(Job));
         if (recv(sock_fd, job, sizeof(Job), 0) == -1) {
@@ -125,6 +128,7 @@ void *handle_connection(void *arg) {
             //printf("Received job with burst = %d, priority = %d\n", job->burst, job->priority);
 
             // here you need to add to the ready queue
+            insert(&RQ, pid_count, job->burst, job->priority);
 
             //add critical section for incrementing pid like example
             pthread_mutex_lock(&cpu_mutex);
