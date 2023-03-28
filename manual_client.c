@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     if (fp == NULL) {
         perror("Error opening file");
         //exit(EXIT_FAILURE);
-        return;
+        return EXIT_FAILURE;
     }
 
     while (fgets(line, sizeof(line), fp)) {
