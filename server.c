@@ -18,10 +18,16 @@
 
 // global pid 
 static _Atomic int pid_count = 0;
+volatile sig_atomic_t flagRun = 1;
 // JobTr
 typedef struct JobTr{
     int sock_fd;                // socket
 } JobTr;
+// Client Connection and Server connection
+typedef struct Connection{
+    int sock_fd;                // socket server
+    int new_socket;                // socket client
+} Connection;
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int create_server_socket(){
@@ -74,10 +80,12 @@ void accept_incoming_connection(int server_fd, struct sockaddr_in address, int* 
     }
 }
 
-void *receive_job(void *arg){
-    JobTr *jow = (JobTr *)arg;
-    int new_socket = jow->sock_fd;
-    // Receive job from client always
+
+void *handle_connection(void *socket_fd) {
+    Connection *connection = (Connection *)arg;
+    int sock_fd = connection->sock_fd;
+    int new_socket = connection->new_socket;
+
     while(true) {
         Job *job = malloc(sizeof(Job));
         if (recv(new_socket, job, sizeof(Job), 0) == -1) {
@@ -97,10 +105,10 @@ void *receive_job(void *arg){
             if (send(new_socket, &pid_count, sizeof(pid_count), 0) < 0) {
                 printf("Send failed pid\n");
             }
-        }
-        
+        }       
+    }  
 
-    }    
+    close(new_socket);
 	pthread_detach(pthread_self());
 }
 
@@ -117,6 +125,7 @@ int main(int argc, char **argv) {
 
 	char *algorithm = argv[1];    
 
+/*
     int server_fd, new_socket; // Socket descriptors
     struct sockaddr_in address; // Client Address
     int addrlen = sizeof(address);
@@ -126,15 +135,7 @@ int main(int argc, char **argv) {
     bind_socket_to_address(server_fd, address);
     listen_for_incoming_connections(server_fd, 3);
     accept_incoming_connection(server_fd, address, &new_socket, &addrlen);
-
-
-    pthread_t jobs_thread;
-    JobTr *jow = (JobTr *)malloc(sizeof(JobTr));
-    jow->sock_fd = new_socket;
-    if(pthread_create(&jobs_thread, NULL, &receive_job, (void*)jow) != 0){
-        printf("\e[91;103;1m Error pthread send  proc\e[0m\n");
-        return EXIT_FAILURE;
-    }
+*/
     
     // cases for the different algorithms and compare the text
     if (strcmp(algorithm, "FIFO") == 0) {
@@ -149,11 +150,43 @@ int main(int argc, char **argv) {
         printf("Invalid algorithm\n");
     }
 
-    while(true){
-        sleep(1);
+    int server_fd, new_socket;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
     }
 
-    close(new_socket); // closing the connected socket
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+    while (flagRun) {
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
+                                 (socklen_t *)&addrlen)) < 0) {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+        pthread_t thread_id;
+        Connection *connection = (Connection *)malloc(sizeof(Connection));
+        connection->sock_fd = new_socket;
+        connection->new_socket = server_fd;
+        pthread_create(&thread_id, NULL, handle_connection, (void*)connection);
+    }
+
+    //close(new_socket); // closing the connected socket
     shutdown(server_fd, SHUT_RDWR); // closing the listening socket
 
     return 0;
