@@ -89,7 +89,8 @@ void *handle_connection(void *arg) {
     while(true) {
         Job *job = malloc(sizeof(Job));
         if (recv(sock_fd, job, sizeof(Job), 0) == -1) {
-            printf("Receive failed job\n");            
+            printf("Receive failed job\n");     
+            break;       
         } 
         else{
             printf("Received job with burst = %d, priority = %d\n", job->burst, job->priority);
@@ -103,12 +104,13 @@ void *handle_connection(void *arg) {
 
             // notify client of the pid
             if (send(sock_fd, &pid_count, sizeof(pid_count), 0) < 0) {
-                printf("Send failed pid\n");
+                printf("Send failed pid\n");  
+                break;       
             }
         }       
     }  
 
-    close(new_socket);
+    close(sock_fd);
 	pthread_detach(pthread_self());
 }
 
