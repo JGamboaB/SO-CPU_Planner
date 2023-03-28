@@ -6,10 +6,15 @@
 #include <arpa/inet.h>
 #include "jobstruct.h" //Custom Job struct
 
+
+#include <sys/wait.h>
+#include <signal.h>
+
 #define PORT 8080
 
 // global pid 
-pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static _Atomic int pid_count = 0;
 
 int create_server_socket(){
