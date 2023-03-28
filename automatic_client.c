@@ -71,22 +71,6 @@ void *send_job_aut(void *arg){
 	pthread_detach(pthread_self());
 }
 
-// Thread function to send processes to the server in automatic mode
-void *send_procs(void *arg){
-    Procs *procs = (Procs *)arg;
-    while (true) {        
-
-        sleep(rand() % procs->rate + 1); // 1 - rate segs
-
-        pthread_t proc_thread;
-        if(pthread_create(&proc_thread, NULL, &send_job_aut, (void*)procs) != 0){
-            printf("\e[91;103;1m Error pthread send  proc\e[0m\n");
-            return EXIT_FAILURE;
-        }
-    } 
-	pthread_detach(pthread_self());
-}
-
 int main(int argc, char const *argv[]) {
     int sock_fd = create_socket();
     struct sockaddr_in serv_addr;
@@ -105,12 +89,16 @@ int main(int argc, char const *argv[]) {
     procs->rate = rate;
     procs->maxBu = burst;
     procs->sock_fd = sock_fd;
-	pthread_t proc_thread;
 
-    if(pthread_create(&proc_thread, NULL, &send_procs, (void*)procs) != 0){
-		printf("\e[91;103;1m Error pthread\e[0m\n");
-		return EXIT_FAILURE;
-	}
+    Procs *procs = (Procs *)arg;
+    while (true) {       
+        sleep(rand() % procs->rate + 1); // 1 - rate segs
+        pthread_t proc_thread;
+        if(pthread_create(&proc_thread, NULL, &send_job_aut, (void*)procs) != 0){
+            printf("\e[91;103;1m Error pthread send  proc\e[0m\n");
+            return EXIT_FAILURE;
+        }
+    } 
 
     close(sock_fd);
 
