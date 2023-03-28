@@ -90,7 +90,6 @@ int main(int argc, char const *argv[]) {
     procs->maxBu = burst;
     procs->sock_fd = sock_fd;
 
-    Procs *procs = (Procs *)arg;
     while (true) {       
         sleep(rand() % procs->rate + 1); // 1 - rate segs
         pthread_t proc_thread;
