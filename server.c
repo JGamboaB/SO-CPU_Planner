@@ -88,7 +88,7 @@ void *handle_connection(void *arg) {
 
     while(true) {
         Job *job = malloc(sizeof(Job));
-        if (recv(new_socket, job, sizeof(Job), 0) == -1) {
+        if (recv(sock_fd, job, sizeof(Job), 0) == -1) {
             printf("Receive failed job\n");            
         } 
         else{
