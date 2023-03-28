@@ -71,19 +71,21 @@ void *send_job_aut(void *arg){
 	pthread_detach(pthread_self());
 }
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char **argv) {
+
+    if(argc != 3){
+		printf("\nERROR: Missing Creation Rate or Max Burs");
+		printf("\nExample run: ./automatic_client 4 10\n");
+		return EXIT_FAILURE;
+	}
+
+	int rate = atoi(argv[1]);
+	int burst = atoi(argv[2]);
+
     int sock_fd = create_socket();
     struct sockaddr_in serv_addr;
     init_server_address(&serv_addr);
     connect_to_server(sock_fd, serv_addr);
-
-   int rate, burst;
-
-    printf("\nEnter the number of creation rate: ");
-    scanf("%d", &rate);
-
-    printf("\nEnter the maximum value of the bursts: ");
-    scanf("%d", &burst);
 
     Procs * procs = (Procs *)malloc(sizeof(Procs));
     procs->rate = rate;
