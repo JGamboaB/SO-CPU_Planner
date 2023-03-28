@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	int* filename = argv[1];    
+	char *filename = argv[1];    
 
     int sock_fd = create_socket();
     struct sockaddr_in serv_addr;
