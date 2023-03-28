@@ -13,7 +13,7 @@
 #define PORT 8080
 
 // global pid 
-pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
+// pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static _Atomic int pid_count = 0;
 
