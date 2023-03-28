@@ -52,9 +52,13 @@ void connect_to_server(int sock_fd, struct sockaddr_in serv_addr) {
     }
 }
 
-void send_job_aut(int sock_fd, Job job) {
+
+void *send_job_aut(void *arg){
+    Procs *procs = (Procs *)arg;
+    Job job = {rand() % procs->burst + 1, rand() % 5 + 1};
+
     if (send(sock_fd, &job, sizeof(job), 0) < 0) {
-        printf("Send failed\n");
+        printf("Send proc failed\n");
         exit(EXIT_FAILURE);
     }
     printf("Job sent - burst: %d - priority: %d\n", job.burst, job.priority);
@@ -64,84 +68,32 @@ void send_job_aut(int sock_fd, Job job) {
         exit(EXIT_FAILURE);
     } 
     printf("Job recv - pid: %d \n", pid);
-}
-
-
-// funcion por proceso para morir de la notificacion del server
-
-
-
-void send_job(int sock_fd, Job job) {
-    //treahd
-    //sleep 2 seg
-
-    if (send(sock_fd, &job, sizeof(job), 0) < 0) {
-        printf("Send failed\n");
-        exit(EXIT_FAILURE);
-    }
-    printf("Job sent - burst: %d - priority: %d\n", job.burst, job.priority);
-}
-
-void manual_mode(int sock_fd){
-    char filename[25];
-    char line[100];
-
-    printf("\nEnter the number of the file: ");
-    scanf("%s", filename);
-
-    FILE* fp = fopen(filename, "r");
-
-    if (fp == NULL) {
-        perror("Error opening file");
-        //exit(EXIT_FAILURE);
-        return;
-    }
-
-    while (fgets(line, sizeof(line), fp)) {
-        line[strcspn(line, "\n")] = '\0'; // remove newline character
-        
-        if(isdigit(line[0])){
-            //printf("%s\n", line);
-            char b[100], *p;
-            char *temp;
-            strcpy(b, line);
-            strtok_r(b, " ", &p);
-            //printf("%s <> %s\n", b, p);
-
-            sleep(rand() % 6 + 3); // 3 - 8 segs
-
-            //define struct job
-            Job job = {strtol(b, &temp, 10), strtol(p, &temp, 10)};
-
-            //send process data to server ( job )
-            send_job(sock_fd, job);
-        }
-        
-    }
-
-    fclose(fp);
-}
-
-
-void auto_mode_off(){
-    // Change flag
-    flag = 1;
+	pthread_detach(pthread_self());
 }
 
 // Thread function to send processes to the server in automatic mode
 void *send_procs(void *arg){
     Procs *procs = (Procs *)arg;
-    while (flag == 0) {
+    while (true) {        
+
         sleep(rand() % procs->rate + 1); // 1 - rate segs
-        Job job = {rand() % procs->burst + 1, rand() % 5 + 1};
-        send_job_aut(procs->sock_fd, job);
-    }
-    flag = 0;    
+
+        pthread_t proc_thread;
+        if(pthread_create(&proc_thread, NULL, &send_job_aut, (void*)procs) != 0){
+            printf("\e[91;103;1m Error pthread send  proc\e[0m\n");
+            return EXIT_FAILURE;
+        }
+    } 
 	pthread_detach(pthread_self());
 }
 
-void auto_mode(int sock_fd){
-    int rate, burst;
+int main(int argc, char const *argv[]) {
+    int sock_fd = create_socket();
+    struct sockaddr_in serv_addr;
+    init_server_address(&serv_addr);
+    connect_to_server(sock_fd, serv_addr);
+
+   int rate, burst;
 
     printf("\nEnter the number of creation rate: ");
     scanf("%d", &rate);
@@ -159,42 +111,6 @@ void auto_mode(int sock_fd){
 		printf("\e[91;103;1m Error pthread\e[0m\n");
 		return EXIT_FAILURE;
 	}
-}
-
-int main(int argc, char const *argv[]) {
-    int sock_fd = create_socket();
-    struct sockaddr_in serv_addr;
-    init_server_address(&serv_addr);
-    connect_to_server(sock_fd, serv_addr);
-
-    //int burst, priority;
-
-    // Choose the mode of operation
-    int mode;
-    printf("Choose the mode of operation:\n");
-    printf("1. Manual\n");
-    printf("2. Automatic On\n");
-    printf("3. Automatic Off\n");
-    printf("Enter the mode: ");
-    scanf("%d", &mode);
-
-    switch (mode) {
-        case 1:
-            manual_mode(sock_fd);
-            break;
-        case 2:
-            auto_mode(sock_fd);
-            break;
-        case 3:
-            auto_mode_off();
-            break;
-        default:
-            printf("Invalid mode\n");
-            break;
-    }
-
-    Job end = {-1,-1};
-    send_job(sock_fd, end);
 
     close(sock_fd);
 

@@ -8,6 +8,10 @@
 
 #define PORT 8080
 
+// global pid 
+pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+static _Atomic int pid_count = 0;
+
 int create_server_socket(){
     int server_fd = 0;
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) { // socket(domain, type, protocol)
@@ -63,6 +67,13 @@ int receive_job(int new_socket, Job* job){
         printf("Receive failed\n");
         exit(EXIT_FAILURE);
     } 
+    //add critical section for incrementing pid
+    pid_count++;
+    // notificar al cliente que llego la informacion 
+    if (send(new_socket, &pid_count, sizeof(pid_count), 0) < 0) {
+        printf("Send failed\n");
+        exit(EXIT_FAILURE);
+    }
 
     // Check for end of jobs signal
     if (job->burst == -1 && job->priority == -1) {
@@ -93,3 +104,9 @@ int main(int argc, char const *argv[]) {
 
     return 0;
 }
+
+// hacer un menu para seleccionar el modo de ejecucion
+
+// desplegar el ready queue
+
+// agreagar ncurses y reutilizar la funcion req_list del proyecto de chat leo
