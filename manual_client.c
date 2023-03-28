@@ -53,6 +53,7 @@ void connect_to_server(int sock_fd, struct sockaddr_in serv_addr) {
 }
 
 void *send_job_man(void *arg){
+    sleep(2);
     Procs *procs = (Procs *)arg;
     Job job = {procs->burst, procs->priority};
 
