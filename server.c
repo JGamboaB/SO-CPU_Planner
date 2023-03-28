@@ -104,6 +104,11 @@ void *handle_connection(void *arg) {
             break;       
         } 
         else{
+            
+            if (flagRun == 0){
+                break;
+            }
+
             if(job->burst == 0 || job->priority == 0){
                 printf("Client desconect\n");
                 break;
@@ -172,7 +177,7 @@ void *window_thread(void *arg) {
             //sprintf(buffer, "%s\n", bufferWin);
             werase(input);
             waddch(output, '\n');   /* result from wgetnstr has no newline */
-            waddstr(output, "Help");
+            waddstr(output, "Help ---------------------");
             waddstr(output, ": \n");
             waddstr(output, "Command help");
             wrefresh(output);
@@ -184,6 +189,8 @@ void *window_thread(void *arg) {
 
         bzero(bufferWin, 1024);
     }
+    
+    flagRun = 0;
     endwin();
 	pthread_detach(pthread_self());
 }   
@@ -263,6 +270,9 @@ int main(int argc, char **argv) {
                                  (socklen_t *)&addrlen)) < 0) {
             perror("accept");
             exit(EXIT_FAILURE);
+        }
+        if (flagRun == 0){
+            break;
         }
         pthread_t thread_id;
         Connection *connection = (Connection *)malloc(sizeof(Connection));
