@@ -148,11 +148,12 @@ void *window_thread(void *arg) {
     WINDOW *input = window->input;
     WINDOW *output = window->output;  
     bool done = FALSE;  
-    char bufferWin[1024] = "Command: ";
+    char bufferWin[1024];
     char buffer[2048];
+    char *com =  "Command: "; 
     
     while(!done) {
-        mvwprintw(input, 0, 0, bufferWin);
+        mvwprintw(input, 0, 0, com);
         if (wgetnstr(input, bufferWin, COLS - 4) != OK) {
             break;
         }
