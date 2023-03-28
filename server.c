@@ -148,11 +148,11 @@ void *window_thread(void *arg) {
     WINDOW *input = window->input;
     WINDOW *output = window->output;  
     bool done = FALSE;  
-    char bufferWin[1024];
+    char bufferWin[1024] = "Command: ";
     char buffer[2048];
     
     while(!done) {
-        mvwprintw(input, 0, 0, "Command: ");
+        mvwprintw(input, 0, 0, bufferWin);
         if (wgetnstr(input, bufferWin, COLS - 4) != OK) {
             break;
         }
@@ -183,7 +183,7 @@ void *window_thread(void *arg) {
             wrefresh(output);
         }
          else {    
-            sprintf(buffer, "Command: %s\n", bufferWin);
+            sprintf(buffer, "%s\n", bufferWin);
             // send(socketfd, buffer, strlen(buffer), 0);
         }
 
@@ -191,7 +191,8 @@ void *window_thread(void *arg) {
     }
     
     flagRun = 0;
-    endwin();
+    endwin();    
+    exit(EXIT_FAILURE);
 	pthread_detach(pthread_self());
 }   
 
@@ -270,9 +271,6 @@ int main(int argc, char **argv) {
                                  (socklen_t *)&addrlen)) < 0) {
             perror("accept");
             exit(EXIT_FAILURE);
-        }
-        if (flagRun == 0){
-            break;
         }
         pthread_t thread_id;
         Connection *connection = (Connection *)malloc(sizeof(Connection));
