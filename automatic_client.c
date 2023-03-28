@@ -55,15 +55,15 @@ void connect_to_server(int sock_fd, struct sockaddr_in serv_addr) {
 
 void *send_job_aut(void *arg){
     Procs *procs = (Procs *)arg;
-    Job job = {rand() % procs->burst + 1, rand() % 5 + 1};
+    Job job = {rand() % procs->maxBu + 1, rand() % 5 + 1};
 
-    if (send(sock_fd, &job, sizeof(job), 0) < 0) {
+    if (send(procs->sock_fd, &job, sizeof(job), 0) < 0) {
         printf("Send proc failed\n");
         exit(EXIT_FAILURE);
     }
     printf("Job sent - burst: %d - priority: %d\n", job.burst, job.priority);
     int pid;
-    if (recv(sock_fd, &pid, sizeof(pid), 0) == -1) {
+    if (recv(procs->sock_fd, &pid, sizeof(pid), 0) == -1) {
         printf("Receive failed\n");
         exit(EXIT_FAILURE);
     } 
