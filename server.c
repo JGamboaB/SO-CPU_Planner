@@ -5,10 +5,13 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "jobstruct.h" //Custom Job struct
+#include <ctype.h>
+#include <limits.h>
 
-
-#include <sys/wait.h>
+#include <ncurses.h>  //ADD AT THE END OF COMPILING THE FILE -lncurses
+#include <pthread.h>
 #include <signal.h>
+#include <errno.h>   // for errno
 
 #define PORT 8080
 
@@ -81,7 +84,7 @@ void *receive_job(void *arg){
             printf("Receive failed job\n");            
         } 
         else{
-            printf("Received job with burst = %d, priority = %d\n", job.burst, job.priority);
+            printf("Received job with burst = %d, priority = %d\n", job->burst, job->priority);
 
             // here you need to add to the ready queue
 
