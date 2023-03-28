@@ -164,6 +164,7 @@ void *window_thread(void *arg) {
 
         if (strcmp(bufferWin, "exit") == 0) {  
             sprintf(buffer, "%s\n", bufferWin);
+            flagRun = 0;
             //send(socketfd, buffer, strlen(buffer), 0);
             break;
         }
