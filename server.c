@@ -128,24 +128,13 @@ int main(int argc, char **argv) {
     accept_incoming_connection(server_fd, address, &new_socket, &addrlen);
 
 
-    
-	struct sockaddr_in client_addr;
-    int connectfd;
-    pthread_t tid;
-
     pthread_t jobs_thread;
     JobTr *jow = (JobTr *)malloc(sizeof(JobTr));
     jow->sock_fd = new_socket;
-
-   // while(true){
-		socklen_t clientlen = sizeof(client_addr);
-		connectfd = accept(server_fd, (struct sockaddr*)&client_addr, &clientlen);
-        if(pthread_create(&jobs_thread, NULL, &receive_job, (void*)jow) != 0){
-            printf("\e[91;103;1m Error pthread send  proc\e[0m\n");
-            return EXIT_FAILURE;
-        }
-		//pthread_create(&tid, NULL, &handle_client, (void*)clien_sockfd);				
-	//}
+    if(pthread_create(&jobs_thread, NULL, &receive_job, (void*)jow) != 0){
+        printf("\e[91;103;1m Error pthread send  proc\e[0m\n");
+        return EXIT_FAILURE;
+    }
     
     // cases for the different algorithms and compare the text
     if (strcmp(algorithm, "FIFO") == 0) {
@@ -158,7 +147,7 @@ int main(int argc, char **argv) {
         printf("RR\n");
     } else {
         printf("Invalid algorithm\n");
-    }    
+    }
 
     while(true){
         sleep(1);
