@@ -102,7 +102,7 @@ void *handle_connection(void *arg) {
             pthread_mutex_unlock(&cpu_mutex);
 
             // notify client of the pid
-            if (send(new_socket, &pid_count, sizeof(pid_count), 0) < 0) {
+            if (send(sock_fd, &pid_count, sizeof(pid_count), 0) < 0) {
                 printf("Send failed pid\n");
             }
         }       
