@@ -19,8 +19,8 @@ volatile sig_atomic_t flag = 0;
 
 // Procs
 typedef struct Procs{
-	int rate;            	// rate
-	int maxBu; 					// max burst
+	int priority;            	    // priority
+	int burst; 					// burst
     int sock_fd;                // socket
 } Procs;
 
@@ -52,42 +52,42 @@ void connect_to_server(int sock_fd, struct sockaddr_in serv_addr) {
     }
 }
 
-void send_job_aut(int sock_fd, Job job) {
-    if (send(sock_fd, &job, sizeof(job), 0) < 0) {
-        printf("Send failed\n");
+void *send_job_man(void *arg){
+    Procs *procs = (Procs *)arg;
+    Job job = {procs->burst, procs->priority};
+
+    if (send(procs->sock_fd, &job, sizeof(job), 0) < 0) {
+        printf("Send proc failed\n");
         exit(EXIT_FAILURE);
     }
     printf("Job sent - burst: %d - priority: %d\n", job.burst, job.priority);
     int pid;
-    if (recv(sock_fd, &pid, sizeof(pid), 0) == -1) {
+    if (recv(procs->sock_fd, &pid, sizeof(pid), 0) == -1) {
         printf("Receive failed\n");
         exit(EXIT_FAILURE);
     } 
     printf("Job recv - pid: %d \n", pid);
+	pthread_detach(pthread_self());
 }
 
+int main(int argc, char **argv) {
 
-// funcion por proceso para morir de la notificacion del server
+    if(argc != 2){
+		printf("\nERROR: Missing Path to file");
+		printf("\nExample run: ./manual_client file.txt\n");
+		return EXIT_FAILURE;
+	}
+
+	int* filename = argv[1];    
+
+    int sock_fd = create_socket();
+    struct sockaddr_in serv_addr;
+    init_server_address(&serv_addr);
+    connect_to_server(sock_fd, serv_addr);
 
 
 
-void send_job(int sock_fd, Job job) {
-    //treahd
-    //sleep 2 seg
-
-    if (send(sock_fd, &job, sizeof(job), 0) < 0) {
-        printf("Send failed\n");
-        exit(EXIT_FAILURE);
-    }
-    printf("Job sent - burst: %d - priority: %d\n", job.burst, job.priority);
-}
-
-void manual_mode(int sock_fd){
-    char filename[25];
     char line[100];
-
-    printf("\nEnter the number of the file: ");
-    scanf("%s", filename);
 
     FILE* fp = fopen(filename, "r");
 
@@ -113,88 +113,21 @@ void manual_mode(int sock_fd){
             //define struct job
             Job job = {strtol(b, &temp, 10), strtol(p, &temp, 10)};
 
-            //send process data to server ( job )
-            send_job(sock_fd, job);
+            Procs * procs = (Procs *)malloc(sizeof(Procs));
+            procs->sock_fd = sock_fd;
+            procs->burst = job.burst;
+            procs->priority = job.priority;
+
+            pthread_t proc_thread;
+            if(pthread_create(&proc_thread, NULL, &send_job_man, (void*)procs) != 0){
+                printf("\e[91;103;1m Error pthread send  proc\e[0m\n");
+                return EXIT_FAILURE;
+            }
         }
         
     }
 
     fclose(fp);
-}
-
-
-void auto_mode_off(){
-    // Change flag
-    flag = 1;
-}
-
-// Thread function to send processes to the server in automatic mode
-void *send_procs(void *arg){
-    Procs *procs = (Procs *)arg;
-    while (flag == 0) {
-        sleep(rand() % procs->rate + 1); // 1 - rate segs
-        Job job = {rand() % procs->burst + 1, rand() % 5 + 1};
-        send_job_aut(procs->sock_fd, job);
-    }
-    flag = 0;    
-	pthread_detach(pthread_self());
-}
-
-void auto_mode(int sock_fd){
-    int rate, burst;
-
-    printf("\nEnter the number of creation rate: ");
-    scanf("%d", &rate);
-
-    printf("\nEnter the maximum value of the bursts: ");
-    scanf("%d", &burst);
-
-    Procs * procs = (Procs *)malloc(sizeof(Procs));
-    procs->rate = rate;
-    procs->maxBu = burst;
-    procs->sock_fd = sock_fd;
-	pthread_t proc_thread;
-
-    if(pthread_create(&proc_thread, NULL, &send_procs, (void*)procs) != 0){
-		printf("\e[91;103;1m Error pthread\e[0m\n");
-		return EXIT_FAILURE;
-	}
-}
-
-int main(int argc, char const *argv[]) {
-    int sock_fd = create_socket();
-    struct sockaddr_in serv_addr;
-    init_server_address(&serv_addr);
-    connect_to_server(sock_fd, serv_addr);
-
-    //int burst, priority;
-
-    // Choose the mode of operation
-    int mode;
-    printf("Choose the mode of operation:\n");
-    printf("1. Manual\n");
-    printf("2. Automatic On\n");
-    printf("3. Automatic Off\n");
-    printf("Enter the mode: ");
-    scanf("%d", &mode);
-
-    switch (mode) {
-        case 1:
-            manual_mode(sock_fd);
-            break;
-        case 2:
-            auto_mode(sock_fd);
-            break;
-        case 3:
-            auto_mode_off();
-            break;
-        default:
-            printf("Invalid mode\n");
-            break;
-    }
-
-    Job end = {-1,-1};
-    send_job(sock_fd, end);
 
     close(sock_fd);
 
