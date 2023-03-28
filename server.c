@@ -109,7 +109,7 @@ void *handle_connection(void *arg) {
                 break;
             }
             char message[100];
-            sprintf(message, "Received job with burst = %d, priority = %d\n", job->burst, job->priority);
+            sprintf(message, " Server: Received job with burst = %d, priority = %d, pid = %d", job->burst, job->priority,pid_count);
 
             werase(win->input);
             waddch(win->output, '\n');   
