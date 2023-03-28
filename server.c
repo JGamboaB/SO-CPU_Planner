@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
     JobTr *jow = (JobTr *)malloc(sizeof(JobTr));
     jow->sock_fd = new_socket;
 
-    while(true){
+   // while(true){
 		socklen_t clientlen = sizeof(client_addr);
 		connectfd = accept(server_fd, (struct sockaddr*)&client_addr, &clientlen);
         if(pthread_create(&jobs_thread, NULL, &receive_job, (void*)jow) != 0){
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
 		//pthread_create(&tid, NULL, &handle_client, (void*)clien_sockfd);				
-	}
+	//}
     
     // cases for the different algorithms and compare the text
     if (strcmp(algorithm, "FIFO") == 0) {
@@ -159,6 +159,10 @@ int main(int argc, char **argv) {
     } else {
         printf("Invalid algorithm\n");
     }    
+
+    while(true){
+        sleep(1);
+    }
 
     close(new_socket); // closing the connected socket
     shutdown(server_fd, SHUT_RDWR); // closing the listening socket
