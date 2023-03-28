@@ -93,6 +93,10 @@ void *handle_connection(void *arg) {
             break;       
         } 
         else{
+            if(job->burst == 0 || job->priority == 0){
+                printf("Job is empty\n");
+                break;
+            }
             printf("Received job with burst = %d, priority = %d\n", job->burst, job->priority);
 
             // here you need to add to the ready queue
