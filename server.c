@@ -81,7 +81,7 @@ void accept_incoming_connection(int server_fd, struct sockaddr_in address, int* 
 }
 
 
-void *handle_connection(void *socket_fd) {
+void *handle_connection(void *arg) {
     Connection *connection = (Connection *)arg;
     int sock_fd = connection->sock_fd;
     int new_socket = connection->new_socket;
