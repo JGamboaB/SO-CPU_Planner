@@ -141,10 +141,10 @@ void *handle_connection(void *arg) {
 void *window_thread(void *arg) {
     Win *window = (Win *)arg;
     WINDOW *input = window->input;
-    WINDOW *output window->output;  
+    WINDOW *output = window->output;  
     bool done = FALSE;  
     char bufferWin[1024];
-    char buffer[1024];
+    char buffer[2048];
     
     while(!done) {
         mvwprintw(input, 0, 0, "Command: ");
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
     output = newwin(LINES - 1, COLS, 0, 0);
     wmove(output, LINES - 2, 0);    /* start at the bottom */
     scrollok(output, TRUE);    
-    Win *window = (Win *)arg;
+    Win *window = (Win *)malloc(sizeof(Win));
     window->input = input;
     window->output = output;  
 
