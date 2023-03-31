@@ -72,6 +72,16 @@ void delete(ReadyQueue *RQ, PCB *pcb){
     pthread_mutex_unlock(&cpu_mutex);
 }
 
+
+void moveFirstToLast(ReadyQueue *RQ){
+    pthread_mutex_lock(&cpu_mutex);
+    RQ->last->next = RQ->head; //the one before the last one has a connection to the new last one
+    RQ->last = RQ->last->next; // The first becomes the last
+    RQ->head = RQ->head->next;  // The first job becomes the next one
+    RQ->last->next = NULL; //Remove link to the new "first" job of the last one
+    pthread_mutex_unlock(&cpu_mutex);
+}
+
 PCB* getSJF(ReadyQueue *RQ){ //Get Shortest Job
     pthread_mutex_lock(&cpu_mutex);
     PCB* tmp = RQ->head;
