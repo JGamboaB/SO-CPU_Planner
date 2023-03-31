@@ -5,10 +5,16 @@
 #ifndef SO_CPU_PLANNER_CPUSCHEDULER_H
 #define SO_CPU_PLANNER_CPUSCHEDULER_H
 
-#include <unistd.h>  // For sleep
+// #include <unistd.h>  // For sleep
 #include "jobscheduler.h"
 
 #define TIME 1  // Used for processing simulation time
+
+void endJob(ReadyQueue *readyQueue, PCB *pcb){
+    printf("\nTerminado proceso %d", pcb->pid);
+    delete(readyQueue, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
+}
+
 
 /*
  * @author Andres
@@ -22,10 +28,11 @@ void fifo(ReadyQueue *readyQueue) {
 
         // Simulates the burst of the process
         while(job->burst > 0){
+            printf("\nSe ejecuto por 1 el proceso %d", job->pid);
             sleep(TIME);  // Simulates it has taken 1 time unit
             job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
         }
-        delete(readyQueue, job);  // The job finished, so is removed from the queue
+        endJob(readyQueue, job);
 
         // Goes for the next job
     }
@@ -43,10 +50,11 @@ void shortestJobFirst(ReadyQueue *readyQueue) {
 
         // Simulates the burst of the process
         while(job->burst > 0){
+            printf("\nSe ejecuto por 1 el proceso %d", job->pid);
             sleep(TIME);  // Simulates it has taken 1 time unit
             job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
         }
-        delete(readyQueue, job);  // The job finished, so is removed from the queue
+        endJob(readyQueue, job);
         // Goes for the next job
     }
 }
@@ -63,12 +71,13 @@ void shortestJobFirstPreemptive(ReadyQueue *readyQueue) {
         PCB* job = getSJF(readyQueue); // Works with the job with the shortest burst
 
         // We cannot execute all the burst, we must go 1 by 1 to check if one with a highest priority came
+        printf("\nSe ejecuto por 1 el proceso %d", job->pid);
         sleep(TIME);  // Simulates it has taken 1 time unit
         job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
 
         // Checks if the job ended or still has burst to execute
         if(job->burst == 0){
-            delete(readyQueue, job);  // The job finished, so is removed from the queue
+            endJob(readyQueue, job);
         }
 
         // Goes for the next job
@@ -87,10 +96,11 @@ void highestPriorityFirst(ReadyQueue *readyQueue) {
 
         // Simulates the burst of the process
         while(job->burst > 0){
+            printf("\nSe ejecuto por 1 el proceso %d", job->pid);
             sleep(TIME);  // Simulates it has taken 1 time unit
             job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
         }
-        delete(readyQueue, job);  // The job finished, so is removed from the queue
+        endJob(readyQueue, job);
         // Goes for the next job
     }}
 
@@ -106,12 +116,13 @@ void highestPriorityPreemptive(ReadyQueue *readyQueue) {
         PCB* job = getHPF(readyQueue); // Works with the job with the highest priority
 
         // We cannot execute all the burst, we must go 1 by 1 to check if one with a highest priority came
+        printf("\nSe ejecuto por 1 el proceso %d", job->pid);
         sleep(TIME);  // Simulates it has taken 1 time unit
         job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
 
         // Checks if the job ended or still has burst to execute
         if(job->burst == 0){
-            delete(readyQueue, job);  // The job finished, so is removed from the queue
+            endJob(readyQueue, job);
         }
 
         // Goes for the next job
@@ -135,6 +146,7 @@ void roundRobin(ReadyQueue *readyQueue, int q) {
         char finished = 0;  // This works as a flag that tells if the job finished in that quantum or needs to wait for the next one
         // Simulates the burst of the quantum
         for (int i = 0; i < q; i++) {
+            printf("\nSe ejecuto por 1 el proceso %d", job->pid);
             sleep(TIME);  // Simulates it has taken 1 time unit
             job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
 
@@ -154,5 +166,7 @@ void roundRobin(ReadyQueue *readyQueue, int q) {
         // Goes for the next job
     }
 }
+
+
 
 #endif //SO_CPU_PLANNER_CPUSCHEDULER_H

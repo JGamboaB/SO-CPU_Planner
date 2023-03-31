@@ -13,7 +13,6 @@
 #include <signal.h>
 #include <errno.h>   // for errno
 
-#include "jobscheduler.h" // Job Scheduler 
 
 #define PORT 8080
 
@@ -41,6 +40,7 @@ typedef struct Connection{
 } Connection;
 
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
+#include "cpuscheduler.h"
 ReadyQueue RQ = {NULL, NULL};
 
 int create_server_socket(){
