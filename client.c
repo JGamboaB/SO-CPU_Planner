@@ -8,7 +8,22 @@
 #include <limits.h>
 #include "jobstruct.h" //Custom Job struct
 
+#include <ncurses.h>  //ADD AT THE END OF COMPILING THE FILE -lncurses
+#include <pthread.h>
+#include <signal.h>
+#include <errno.h>   // for errno
+
 #define PORT 8080
+
+volatile sig_atomic_t flag = 0;
+
+// Procs
+typedef struct Procs{
+	int rate;            	// rate
+	int maxBu; 					// max burst
+    int sock_fd;                // socket
+} Procs;
+
 
 int create_socket() {
     int sock_fd = 0;
@@ -37,7 +52,29 @@ void connect_to_server(int sock_fd, struct sockaddr_in serv_addr) {
     }
 }
 
+void send_job_aut(int sock_fd, Job job) {
+    if (send(sock_fd, &job, sizeof(job), 0) < 0) {
+        printf("Send failed\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("Job sent - burst: %d - priority: %d\n", job.burst, job.priority);
+    int pid;
+    if (recv(sock_fd, &pid, sizeof(pid), 0) == -1) {
+        printf("Receive failed\n");
+        exit(EXIT_FAILURE);
+    } 
+    printf("Job recv - pid: %d \n", pid);
+}
+
+
+// funcion por proceso para morir de la notificacion del server
+
+
+
 void send_job(int sock_fd, Job job) {
+    //treahd
+    //sleep 2 seg
+
     if (send(sock_fd, &job, sizeof(job), 0) < 0) {
         printf("Send failed\n");
         exit(EXIT_FAILURE);
@@ -72,7 +109,11 @@ void manual_mode(int sock_fd){
             //printf("%s <> %s\n", b, p);
 
             sleep(rand() % 6 + 3); // 3 - 8 segs
+
+            //define struct job
             Job job = {strtol(b, &temp, 10), strtol(p, &temp, 10)};
+
+            //send process data to server ( job )
             send_job(sock_fd, job);
         }
         
@@ -81,21 +122,43 @@ void manual_mode(int sock_fd){
     fclose(fp);
 }
 
-void auto_mode(int sock_fd){
-    int n_jobs, burst;
 
-    printf("\nEnter the number of jobs to generate: "); //n_jobs = INT_MAX;
-    scanf("%d", &n_jobs);
+void auto_mode_off(){
+    // Change flag
+    flag = 1;
+}
+
+// Thread function to send processes to the server in automatic mode
+void *send_procs(void *arg){
+    Procs *procs = (Procs *)arg;
+    while (flag == 0) {
+        sleep(rand() % procs->rate + 1); // 1 - rate segs
+        Job job = {rand() % procs->maxBu + 1, rand() % 5 + 1};
+        send_job_aut(procs->sock_fd, job);
+    }
+    flag = 0;    
+	pthread_detach(pthread_self());
+}
+
+void auto_mode(int sock_fd){
+    int rate, burst;
+
+    printf("\nEnter the number of creation rate: ");
+    scanf("%d", &rate);
 
     printf("\nEnter the maximum value of the bursts: ");
     scanf("%d", &burst);
 
-    // Create threads to send process data to server
-    for (int i = 0; i < n_jobs; i++) {
-        sleep(rand() % 6 + 3); // 3 - 8 segs
-        Job job = {rand() % burst + 1, rand() % 5 + 1};
-        send_job(sock_fd, job);
-    }
+    Procs * procs = (Procs *)malloc(sizeof(Procs));
+    procs->rate = rate;
+    procs->maxBu = burst;
+    procs->sock_fd = sock_fd;
+	pthread_t proc_thread;
+
+    if(pthread_create(&proc_thread, NULL, &send_procs, (void*)procs) != 0){
+		printf("\e[91;103;1m Error pthread\e[0m\n");
+		exit(EXIT_FAILURE);
+	}
 }
 
 int main(int argc, char const *argv[]) {
@@ -110,7 +173,8 @@ int main(int argc, char const *argv[]) {
     int mode;
     printf("Choose the mode of operation:\n");
     printf("1. Manual\n");
-    printf("2. Automatic\n");
+    printf("2. Automatic On\n");
+    printf("3. Automatic Off\n");
     printf("Enter the mode: ");
     scanf("%d", &mode);
 
@@ -120,6 +184,9 @@ int main(int argc, char const *argv[]) {
             break;
         case 2:
             auto_mode(sock_fd);
+            break;
+        case 3:
+            auto_mode_off();
             break;
         default:
             printf("Invalid mode\n");
