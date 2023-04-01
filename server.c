@@ -237,7 +237,7 @@ void *start_time_thread(void *arg) {
     while(stop == 0){
         sleep(1);
         pthread_mutex_lock(&cpu_mutex);
-        TIME++;
+        TIMESF++;
         pthread_mutex_unlock(&cpu_mutex);
     }  
 
@@ -297,6 +297,10 @@ int main(int argc, char **argv) {
     pthread_create(&thread_id, NULL, window_thread, (void*)window);
 
 
+    pthread_t time_id;
+    pthread_create(&time_id, NULL, start_time_thread, NULL);
+    
+
     pthread_t cpu_id;
     CPUINFO *cpuinf = (CPUINFO *)malloc(sizeof(CPUINFO));
     cpuinf->RQ = &RQ;
@@ -306,33 +310,33 @@ int main(int argc, char **argv) {
     // cases for the different algorithms and compare the text
     if (strcmp(algorithm, "FIFO") == 0) {        
         sprintf(message, "Server: FIFO\n");
-        waddstr(win->output, message);
-        wrefresh(win->output); 
-        mvwprintw(win->input, 0, 0, "Command: ");  
+        waddstr(output, message);
+        wrefresh(output); 
+        mvwprintw(input, 0, 0, "Command: ");  
         pthread_create(&cpu_id, NULL, fifo, (void*)cpuinf);        
     } else if (strcmp(algorithm, "SJF") == 0) {        
         sprintf(message, "Server: SJF\n");
-        waddstr(win->output, message);
-        wrefresh(win->output); 
-        mvwprintw(win->input, 0, 0, "Command: ");  
+        waddstr(output, message);
+        wrefresh(output); 
+        mvwprintw(input, 0, 0, "Command: ");  
        // fifo(&RQ, output);
     } else if (strcmp(algorithm, "HPF") == 0) {        
         sprintf(message, "Server: HPF\n");
-        waddstr(win->output, message);
-        wrefresh(win->output); 
-        mvwprintw(win->input, 0, 0, "Command: ");  
+        waddstr(output, message);
+        wrefresh(output); 
+        mvwprintw(input, 0, 0, "Command: ");  
        // fifo(&RQ, output);
     } else if (strcmp(algorithm, "RR") == 0) {        
         sprintf(message, "Server: RR\n");
-        waddstr(win->output, message);
-        wrefresh(win->output); 
-        mvwprintw(win->input, 0, 0, "Command: ");  
+        waddstr(output, message);
+        wrefresh(output); 
+        mvwprintw(input, 0, 0, "Command: ");  
         //fifo(&RQ, output);
     } else {        
         sprintf(message, "Server: Invalid algorithm\n");
-        waddstr(win->output, message);
-        wrefresh(win->output); 
-        mvwprintw(win->input, 0, 0, "Command: ");  
+        waddstr(output, message);
+        wrefresh(output); 
+        mvwprintw(input, 0, 0, "Command: ");  
         return 0;
     }
 

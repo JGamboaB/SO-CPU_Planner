@@ -26,7 +26,7 @@ void endJob(ReadyQueue *readyQueue, PCB *pcb){
  * @param readyQueue: a queue of structs Job to work on
  * */
 void *fifo(void *arg) {
-    CPUINFO *cpuinfo = (CPUINFO *)arg;.
+    CPUINFO *cpuinfo = (CPUINFO *)arg;
     ReadyQueue *readyQueue = cpuinfo->RQ;
     WINDOW *output = cpuinfo->output;
 
