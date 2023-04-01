@@ -13,7 +13,7 @@
 
 volatile sig_atomic_t stop = 0;
 
-void endJob(ReadyQueue *readyQueue,FinishQueue *FQ PCB *pcb){
+void endJob(ReadyQueue *readyQueue,FinishQueue *FQ, PCB *pcb){
     //printf("\nTerminado proceso %d", pcb->pid);
     
     pcb->endTime = TIMESF;
