@@ -20,7 +20,7 @@ void endJob(ReadyQueue *readyQueue,FinishQueue *FQ, PCB *pcb){
     pcb->turnaroundTime = pcb->endTime - pcb->startTime;
     pcb->waitingTime = pcb->turnaroundTime - pcb->burst;
     readyQueue->finishedJobs++;
-    delete(readyQueue,FQ pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
+    delete(readyQueue,FQ, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
 }
 
 
