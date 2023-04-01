@@ -256,7 +256,6 @@ int main(int argc, char **argv) {
 	}
 
 	char *algorithm = argv[1];    
-    int rrQ = atoi(argv[2]);    
 
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -326,7 +325,9 @@ int main(int argc, char **argv) {
         wrefresh(output); 
         mvwprintw(input, 0, 0, "Command: ");  
        // fifo(&RQ, output);
-    } else if (strcmp(algorithm, "RR") == 0) {        
+    } else if (strcmp(algorithm, "RR") == 0) { 
+        
+        int rrQ = atoi(argv[2]);           
         sprintf(message, "Server: RR\n");
         waddstr(output, message);
         wrefresh(output); 
