@@ -225,6 +225,7 @@ void *window_thread(void *arg) {
                 waddstr(output, message);
                 waddstr(output, "\n");                
                 wrefresh(output);
+                sleep(1);
                 sumTAT += tmp->turnaroundTime;
                 sumWT += tmp->waitingTime;
                 i++;
