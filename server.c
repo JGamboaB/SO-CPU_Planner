@@ -13,7 +13,6 @@
 #include <signal.h>
 #include <errno.h>   // for errno
 
-#include "jobscheduler.h" // Job Scheduler 
 
 #define PORT 8080
 
@@ -22,6 +21,10 @@
 static _Atomic int pid_count = 0;
 volatile sig_atomic_t flagRun = 1;
 volatile sig_atomic_t algor = 0;
+
+static _Atomic int TIMESF = 0;
+
+
 // JobTr
 typedef struct JobTr{
     int sock_fd;                // socket
@@ -40,7 +43,15 @@ typedef struct Connection{
     struct Win *win;             // windows
 } Connection;
 
+// Send info CPU
+typedef struct CPUINFO{    
+    struct Connection *connection;             // windows
+    WINDOW *output;             // output window
+    int rr;
+} CPUINFO
+
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
+#include "cpuscheduler.h"
 ReadyQueue RQ = {NULL, NULL};
 
 int create_server_socket(){
@@ -99,7 +110,7 @@ void *handle_connection(void *arg) {
     int sock_fd = connection->sock_fd;
     int new_socket = connection->new_socket;
     struct Win *win = connection->win;
-+
+
     while(true) {
         Job *job = malloc(sizeof(Job));
         if (recv(sock_fd, job, sizeof(Job), 0) == -1) {
@@ -116,24 +127,23 @@ void *handle_connection(void *arg) {
                 printf("Client desconect\n");
                 break;
             }
-            char message[100];
-            sprintf(message, " Server: Received job with burst = %d, priority = %d, pid = %d", job->burst, job->priority,pid_count);
+            //char message[100];
+            //sprintf(message, " Server: Received job with burst = %d, priority = %d, pid = %d", job->burst, job->priority,pid_count);
 
-            werase(win->input);
-            waddch(win->output, '\n');   
-            waddstr(win->output, message);
-            wrefresh(win->output); 
-            mvwprintw(win->input, 0, 0, "Command: ");   
+            //waddstr(win->output, message);
+            //wrefresh(win->output); 
+            //mvwprintw(win->input, 0, 0, "Command: ");   
 
             //printf("Received job with burst = %d, priority = %d\n", job->burst, job->priority);
 
             // here you need to add to the ready queue
-            insert(&RQ, pid_count, job->burst, job->priority);
 
             //add critical section for incrementing pid like example
             pthread_mutex_lock(&cpu_mutex);
             pid_count++;
             pthread_mutex_unlock(&cpu_mutex);
+
+            insert(&RQ, pid_count, job->burst, job->priority,TIMESF);
 
             // notify client of the pid
             if (send(sock_fd, &pid_count, sizeof(pid_count), 0) < 0) {
@@ -187,10 +197,31 @@ void *window_thread(void *arg) {
             waddstr(output, "Command help");
             wrefresh(output);
         }
+        else if (strcmp(bufferWin, "stop") == 0) {
+            //sprintf(buffer, "%s\n", bufferWin);
+            stop = 1;
+            werase(input);
+            waddch(output, '\n');   /* result from wgetnstr has no newline */
+            waddstr(output, "Stop CPU");
+            waddstr(output, ": \n");
+            waddstr(output, "PRINT READY QUEUE");
+            /*
+            Debe haber alguna forma de detener la simulación. Cuando esto ocurra, el Simulador debe desplegar
+            la siguiente información resumen:
+            • Cantidad de procesos ejecutados
+            • Cantidad de segundos con CPU ocioso.
+            • Tabla de TAT y WT para los procesos ejecutados
+            • Promedio de Waiting Time
+            • Promedio de Turn Around Time
+            */
+            wrefresh(output);
+        }
          else {    
             sprintf(buffer, "%s\n", bufferWin);
             // send(socketfd, buffer, strlen(buffer), 0);
         }
+        // consultar ready queue
+        // detener simulacion
 
         bzero(bufferWin, 1024);
     }
@@ -201,37 +232,31 @@ void *window_thread(void *arg) {
 	pthread_detach(pthread_self());
 }   
 
+
+void *start_time_thread(void *arg) {
+    while(stop == 0){
+        sleep(1);
+        pthread_mutex_lock(&cpu_mutex);
+        TIME++;
+        pthread_mutex_unlock(&cpu_mutex);
+    }  
+
+	pthread_detach(pthread_self());
+}   
+
 int main(int argc, char **argv) {
 
-    if(argc != 2){
+    if(argc < 2){
 		printf("\nERROR: Missing Algorithm argument");
 		printf("\nExample run: ./server FIFO\n");
         printf("\nExample run: ./server SJF\n");
         printf("\nExample run: ./server HPF\n");
-        printf("\nExample run: ./server RR\n"); //Round Robin
+        printf("\nExample run: ./server RR 2\n"); //Round Robin
 		return EXIT_FAILURE;
 	}
 
 	char *algorithm = argv[1];    
-    
-    // cases for the different algorithms and compare the text
-    if (strcmp(algorithm, "FIFO") == 0) {
-        printf("FIFO\n");
-        algor = 1;
-    } else if (strcmp(algorithm, "SJF") == 0) {
-        printf("SJF\n");
-        algor = 2;
-    } else if (strcmp(algorithm, "HPF") == 0) {
-        printf("HPF\n");
-        algor = 3;
-    } else if (strcmp(algorithm, "RR") == 0) {
-        printf("RR\n");
-        algor = 4;
-    } else {
-        printf("Invalid algorithm\n");
-        algor = 5;
-        return 0;
-    }
+    int rrQ = atoi(argv[2]);    
 
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -270,6 +295,46 @@ int main(int argc, char **argv) {
 
     pthread_t thread_id;
     pthread_create(&thread_id, NULL, window_thread, (void*)window);
+
+
+    pthread_t cpu_id;
+    CPUINFO *cpuinf = (CPUINFO *)malloc(sizeof(CPUINFO));
+    cpuinf->RQ = &RQ;
+    cpuinf->output = output;
+
+    char message[100];
+    // cases for the different algorithms and compare the text
+    if (strcmp(algorithm, "FIFO") == 0) {        
+        sprintf(message, "Server: FIFO\n");
+        waddstr(win->output, message);
+        wrefresh(win->output); 
+        mvwprintw(win->input, 0, 0, "Command: ");  
+        pthread_create(&cpu_id, NULL, fifo, (void*)cpuinf);        
+    } else if (strcmp(algorithm, "SJF") == 0) {        
+        sprintf(message, "Server: SJF\n");
+        waddstr(win->output, message);
+        wrefresh(win->output); 
+        mvwprintw(win->input, 0, 0, "Command: ");  
+        fifo(&RQ, output);
+    } else if (strcmp(algorithm, "HPF") == 0) {        
+        sprintf(message, "Server: HPF\n");
+        waddstr(win->output, message);
+        wrefresh(win->output); 
+        mvwprintw(win->input, 0, 0, "Command: ");  
+        fifo(&RQ, output);
+    } else if (strcmp(algorithm, "RR") == 0) {        
+        sprintf(message, "Server: RR\n");
+        waddstr(win->output, message);
+        wrefresh(win->output); 
+        mvwprintw(win->input, 0, 0, "Command: ");  
+        fifo(&RQ, output);
+    } else {        
+        sprintf(message, "Server: Invalid algorithm\n");
+        waddstr(win->output, message);
+        wrefresh(win->output); 
+        mvwprintw(win->input, 0, 0, "Command: ");  
+        return 0;
+    }
 
     while (flagRun) {
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address,

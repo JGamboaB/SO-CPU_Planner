@@ -8,15 +8,20 @@ typedef struct PCB{
     int pid;
     int burst;
     int priority;
+    int startTime;
+    int endTime;
+    int waitingTime;
+    int turnaroundTime;
     struct PCB* next;
 } PCB;
 
 typedef struct ReadyQueue{
+    int cpuOcioso;
     PCB* head;
     PCB* last;
 } ReadyQueue;
 
-PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority){
+PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
 
     //Create PCB
     PCB* pcb = (PCB*)malloc(sizeof(PCB));
@@ -24,6 +29,7 @@ PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority){
     pcb->burst = burst;
     pcb->priority = priority;
     pcb->next = NULL;
+    pcb->startTime = starTime;
     pthread_mutex_lock(&cpu_mutex);
     if (RQ->head == NULL){ //empty
         RQ->head = pcb;
@@ -69,6 +75,16 @@ void delete(ReadyQueue *RQ, PCB *pcb){
         }
         tmp = tmp->next;
     }
+    pthread_mutex_unlock(&cpu_mutex);
+}
+
+
+void moveFirstToLast(ReadyQueue *RQ){
+    pthread_mutex_lock(&cpu_mutex);
+    RQ->last->next = RQ->head; //the one before the last one has a connection to the new last one
+    RQ->last = RQ->last->next; // The first becomes the last
+    RQ->head = RQ->head->next;  // The first job becomes the next one
+    RQ->last->next = NULL; //Remove link to the new "first" job of the last one
     pthread_mutex_unlock(&cpu_mutex);
 }
 
