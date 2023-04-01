@@ -18,7 +18,7 @@
 
 
 // global pid 
-static _Atomic int pid_count = 0;
+int pid_count = 0;
 volatile sig_atomic_t flagRun = 1;
 volatile sig_atomic_t algor = 0;
 
@@ -215,21 +215,21 @@ void *window_thread(void *arg) {
             waddstr(output, "\n");            
             wrefresh(output);
 
-            PCB tmp = FQ.head;
+            PCB *tmp = FQ.head;
             int i = 0;
             int sumTAT = 0;
             int sumWT = 0;
             while( tmp->next != NULL){
-                sprintf(message, "Proceso: %d, TAT: %d, WT: %d", tmp.pid, tmp.turnaroundTime
-                , tmp.waitingTime);          
+                sprintf(message, "Proceso: %d, TAT: %d, WT: %d", tmp->pid, tmp->turnaroundTime
+                , tmp->waitingTime);          
                 waddstr(output, message);
                 waddstr(output, "\n");                
                 wrefresh(output);
                 sleep(1);
-                sumTAT += tmp.turnaroundTime;
-                sumWT += tmp.waitingTime;
+                sumTAT += tmp->turnaroundTime;
+                sumWT += tmp->waitingTime;
                 i++;
-                tmp = tmp.next;
+                tmp = tmp->next;
             }
             sprintf(message, "Promedio de Waiting Time: %d", sumWT/i);
             waddstr(output, message);
