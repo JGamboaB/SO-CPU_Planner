@@ -45,10 +45,10 @@ typedef struct Connection{
 
 // Send info CPU
 typedef struct CPUINFO{    
-    struct Connection *connection;             // windows
+    struct ReadyQueue *RQ;      // Ready Queue
     WINDOW *output;             // output window
     int rr;
-} CPUINFO
+} CPUINFO;
 
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
 #include "cpuscheduler.h"
