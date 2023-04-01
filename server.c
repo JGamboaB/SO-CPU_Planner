@@ -54,7 +54,7 @@ typedef struct CPUINFO{
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
 #include "cpuscheduler.h"
 ReadyQueue RQ = {NULL, NULL};
-FinishedQueue FQ = {NULL, NULL};
+FinishQueue FQ = {NULL, NULL};
 
 int create_server_socket(){
     int server_fd = 0;
