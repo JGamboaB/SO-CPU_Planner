@@ -10,8 +10,12 @@
 
 #define TIME 1  // Used for processing simulation time
 
+
+volatile sig_atomic_t stop = 0;
+
 void endJob(ReadyQueue *readyQueue, PCB *pcb){
-    printf("\nTerminado proceso %d", pcb->pid);
+    //printf("\nTerminado proceso %d", pcb->pid);
+    TIMESF++;
     delete(readyQueue, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
 }
 
@@ -21,26 +25,53 @@ void endJob(ReadyQueue *readyQueue, PCB *pcb){
  * @dev this function takes the first job of the ready queue and executes it until it finishes
  * @param readyQueue: a queue of structs Job to work on
  * */
-void fifo(ReadyQueue *readyQueue, WINDOW *output) {
-    // Keeps loading jobs until there are no more left
-    while(readyQueue->head != NULL) {
-        PCB* job = readyQueue->head;  // Takes the first job of the queue
+void *fifo(void *arg) {
+    CPUINFO *cpuinfo = (CPUINFO *)arg;.
+    ReadyQueue *readyQueue = cpuinfo->RQ;
+    WINDOW *output = cpuinfo->output;
 
-        char message[100];
-        sprintf(message, "\nFIFO [server]: Proceso %d con burst %d y prioridad %d entra en ejecución.", job->pid, job->burst, job->priority);
-        waddstr(output, message);
-        wrefresh(output); 
-
-        // Simulates the burst of the process
-        while(job->burst > 0){
-            sleep(TIME);  // Simulates it has taken 1 time unit
-            job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
+    //agregar atributo ReadyQueue cpuOcioso
+    while(true){
+        if(stop){
+            break;
         }
-        sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
-        waddstr(output, message);
-        wrefresh(output);
-        endJob(readyQueue, job);
-        // Goes for the next job
+
+        while(readyQueue->head == NULL){
+            readyQueue->cpuOcioso++;
+            sleep(TIME);
+        }
+
+        // Keeps loading jobs until there are no more left
+        while(readyQueue->head != NULL) {
+            if(stop){
+                break;
+            }
+            PCB* job = readyQueue->head;  // Takes the first job of the queue
+
+            // How to print to the window
+            char message[100];
+            sprintf(message, "\nFIFO [server]: Proceso %d con burst %d y prioridad %d entra en ejecución.", job->pid, job->burst, job->priority);
+            waddstr(output, message);
+            wrefresh(output); 
+            
+            // Simulates the burst of the process
+            sleep(job->burst);
+
+            /*
+            // Simulates the burst of the process
+            while(job->burst > 0){
+                sleep(ob->burst);  // Simulates it has taken 1 time unit
+                job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
+            }*/
+
+            sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
+            waddstr(output, message);
+            //mvwprintw(win->input, 0, 0, "Command: ");  
+            wrefresh(output);
+
+            endJob(readyQueue, job);
+            // Goes for the next job
+        }
     }
 }
 

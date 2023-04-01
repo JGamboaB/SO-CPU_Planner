@@ -8,15 +8,20 @@ typedef struct PCB{
     int pid;
     int burst;
     int priority;
+    int startTime;
+    int endTime;
+    int waitingTime;
+    int turnaroundTime;
     struct PCB* next;
 } PCB;
 
 typedef struct ReadyQueue{
+    int cpuOcioso;
     PCB* head;
     PCB* last;
 } ReadyQueue;
 
-PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority){
+PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
 
     //Create PCB
     PCB* pcb = (PCB*)malloc(sizeof(PCB));
@@ -24,6 +29,7 @@ PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority){
     pcb->burst = burst;
     pcb->priority = priority;
     pcb->next = NULL;
+    pcb->startTime = starTime;
     pthread_mutex_lock(&cpu_mutex);
     if (RQ->head == NULL){ //empty
         RQ->head = pcb;
