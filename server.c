@@ -207,15 +207,15 @@ void *window_thread(void *arg) {
             waddstr(output, "Stop CPU");
             waddstr(output, ": \n");
             char message[100];
-            sprintf(message, "Cantidad de procesos ejecutados: %d", &RQ->finishedJobs);            
+            sprintf(message, "Cantidad de procesos ejecutados: %d", RQ->finishedJobs);            
             waddstr(output, message);
             waddstr(output, "\n");
-            sprintf(message, "Cantidad de segundos con CPU ocioso: %d", &RQ->cpuOcioso);          
+            sprintf(message, "Cantidad de segundos con CPU ocioso: %d", RQ->cpuOcioso);          
             waddstr(output, message);
             waddstr(output, "\n");            
             wrefresh(output);
 
-            PCB *tmp = &FQ->head;
+            PCB *tmp = FQ->head;
             int i = 0;
             int sumTAT = 0;
             int sumWT = 0;
