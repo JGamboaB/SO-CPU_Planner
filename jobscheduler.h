@@ -58,17 +58,25 @@ PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
 }
 
 void delete(ReadyQueue *RQ,FinishQueue *FQ, PCB *pcb){
+    //Create PCB
+    PCB* pcb2 = (PCB*)malloc(sizeof(PCB));
+    pcb2->pid = pcb->pid;
+    pcb2->burst = pcb->burst;
+    pcb2->priority = pcb->priority;
+    pcb2->next = pcb->next;
+    pcb2->startTime = pcb->startTime;
+    pcb2->finish = 1;
     pthread_mutex_lock(&cpu_mutex);
     if (FQ->head == NULL){ //empty
-        FQ->head = pcb;
-        FQ->last = pcb;
+        FQ->head = pcb2;
+        FQ->last = pcb2;
     } else {
         if (FQ->head->next == NULL){ //only 1 element in RQ
-            FQ->head->next = pcb;
-            FQ->last = pcb;
+            FQ->head->next = pcb2;
+            FQ->last = pcb2;
         } else {
-            FQ->last->next = pcb;
-            FQ->last = pcb;
+            FQ->last->next = pcb2;
+            FQ->last = pcb2;
         }
     }
     pthread_mutex_unlock(&cpu_mutex);
