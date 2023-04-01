@@ -46,6 +46,7 @@ typedef struct Connection{
 // Send info CPU
 typedef struct CPUINFO{    
     struct ReadyQueue *RQ;      // Ready Queue
+    struct FinishedQueue *FQ;   // Finished Queue
     WINDOW *output;             // output window
     int rr;
 } CPUINFO;
@@ -53,6 +54,7 @@ typedef struct CPUINFO{
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
 #include "cpuscheduler.h"
 ReadyQueue RQ = {NULL, NULL};
+ReadyQueue FQ = {NULL, NULL};
 
 int create_server_socket(){
     int server_fd = 0;
@@ -204,16 +206,36 @@ void *window_thread(void *arg) {
             waddch(output, '\n');   /* result from wgetnstr has no newline */
             waddstr(output, "Stop CPU");
             waddstr(output, ": \n");
-            waddstr(output, "PRINT READY QUEUE");
-            /*
-            Debe haber alguna forma de detener la simulación. Cuando esto ocurra, el Simulador debe desplegar
-            la siguiente información resumen:
-            • Cantidad de procesos ejecutados
-            • Cantidad de segundos con CPU ocioso.
-            • Tabla de TAT y WT para los procesos ejecutados
-            • Promedio de Waiting Time
-            • Promedio de Turn Around Time
-            */
+            char message[100];
+            sprintf(message, "Cantidad de procesos ejecutados: %d", RQ->finishedJobs);            
+            waddstr(output, message);
+            waddstr(output, "\n");
+            sprintf(message, "Cantidad de segundos con CPU ocioso: %d", RQ->cpuOcioso);          
+            waddstr(output, message);
+            waddstr(output, "\n");            
+            wrefresh(output);
+
+            PCB *tmp = FQ->head;
+            int i = 0;
+            int sumTAT = 0;
+            int sumWT = 0;
+            while( tmp->next != NULL){
+                sprintf(message, "Proceso: %d, TAT: %d, WT: %d", tmp->pid, tmp->turnaroundTime
+                , tmp->waitingTime);          
+                waddstr(output, message);
+                waddstr(output, "\n");                
+                wrefresh(output);
+                sumTAT += tmp->turnaroundTime;
+                sumWT += tmp->waitingTime;
+                i++;
+                tmp = tmp->next;
+            }
+            sprintf(message, "Promedio de Waiting Time: %d", sumWT/i);
+            waddstr(output, message);
+            waddstr(output, "\n");
+            sprintf(message, "Promedio de Turn Around Time: %d", sumTAT/i);
+            waddstr(output, message);
+            waddstr(output, "\n");
             wrefresh(output);
         }
          else {    
@@ -303,6 +325,7 @@ int main(int argc, char **argv) {
     pthread_t cpu_id;
     CPUINFO *cpuinf = (CPUINFO *)malloc(sizeof(CPUINFO));
     cpuinf->RQ = &RQ;
+    cpuinf->FQ = &FQ;
     cpuinf->output = output;
 
     char message[100];

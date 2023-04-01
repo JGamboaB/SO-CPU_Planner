@@ -12,11 +12,20 @@ typedef struct PCB{
     int endTime;
     int waitingTime;
     int turnaroundTime;
+    int finish; //0: ready, 1: finished
     struct PCB* next;
 } PCB;
 
 typedef struct ReadyQueue{
     int cpuOcioso;
+    int finishedJobs;
+    PCB* head;
+    PCB* last;
+} ReadyQueue;
+
+typedef struct FinishQueue{
+    int cpuOcioso;
+    int finishedJobs;
     PCB* head;
     PCB* last;
 } ReadyQueue;
@@ -30,6 +39,7 @@ PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
     pcb->priority = priority;
     pcb->next = NULL;
     pcb->startTime = starTime;
+    pcb->finish = 0;
     pthread_mutex_lock(&cpu_mutex);
     if (RQ->head == NULL){ //empty
         RQ->head = pcb;
@@ -47,7 +57,22 @@ PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
     return pcb;
 }
 
-void delete(ReadyQueue *RQ, PCB *pcb){
+void delete(ReadyQueue *RQ,FinishQueue *FQ, PCB *pcb){
+    pthread_mutex_lock(&cpu_mutex);
+    if (FQ->head == NULL){ //empty
+        FQ->head = pcb;
+        FQ->last = pcb;
+    } else {
+        if (FQ->head->next == NULL){ //only 1 element in RQ
+            FQ->head->next = pcb;
+            FQ->last = pcb;
+        } else {
+            FQ->last->next = pcb;
+            FQ->last = pcb;
+        }
+    }
+    pthread_mutex_unlock(&cpu_mutex);
+
     pthread_mutex_lock(&cpu_mutex);
     if (RQ->head == pcb){ //first element
         

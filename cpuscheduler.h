@@ -13,10 +13,14 @@
 
 volatile sig_atomic_t stop = 0;
 
-void endJob(ReadyQueue *readyQueue, PCB *pcb){
+void endJob(ReadyQueue *readyQueue,FinishQueue *FQ PCB *pcb){
     //printf("\nTerminado proceso %d", pcb->pid);
-    TIMESF++;
-    delete(readyQueue, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
+    
+    pcb->endTime = TIMESF;
+    pcb->turnaroundTime = pcb->endTime - pcb->startTime;
+    pcb->waitingTime = pcb->turnaroundTime - pcb->burst;
+    readyQueue->finishedJobs++;
+    delete(readyQueue,FQ pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
 }
 
 
@@ -28,7 +32,9 @@ void endJob(ReadyQueue *readyQueue, PCB *pcb){
 void *fifo(void *arg) {
     CPUINFO *cpuinfo = (CPUINFO *)arg;
     ReadyQueue *readyQueue = cpuinfo->RQ;
+    FinishQueue *FQ = cpuinfo->FQ;
     WINDOW *output = cpuinfo->output;
+
 
     //agregar atributo ReadyQueue cpuOcioso
     while(true){
@@ -57,6 +63,11 @@ void *fifo(void *arg) {
             // Simulates the burst of the process
             sleep(job->burst);
 
+            if(stop){
+                break;
+            }
+
+            
             /*
             // Simulates the burst of the process
             while(job->burst > 0){
@@ -69,7 +80,7 @@ void *fifo(void *arg) {
             //mvwprintw(win->input, 0, 0, "Command: ");  
             wrefresh(output);
 
-            endJob(readyQueue, job);
+            endJob(readyQueue,FQ, job);
             // Goes for the next job
         }
     }
