@@ -28,7 +28,7 @@ typedef struct FinishQueue{
     int finishedJobs;
     PCB* head;
     PCB* last;
-} ReadyQueue;
+} FinishQueue;
 
 PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
 
