@@ -91,6 +91,7 @@ void *fifo(void *arg) {
  * @dev this function takes the job with the shortest burst from the ready queue and executes it until it finishes
  * @param readyQueue: a queue of structs Job to work on
  * */
+/*
 void shortestJobFirst(ReadyQueue *readyQueue) {
     // Keeps loading jobs until there are no more left
     while(readyQueue->head != NULL) {
@@ -106,6 +107,7 @@ void shortestJobFirst(ReadyQueue *readyQueue) {
         // Goes for the next job
     }
 }
+*/
 
 /*
  * @author Andres
@@ -113,6 +115,7 @@ void shortestJobFirst(ReadyQueue *readyQueue) {
  * Since it is preemptive it executes for just 1 time unit, it does not matter if it could finish or not, and checks again
  * @param readyQueue: a queue of structs Job to work on
  * */
+/*
 void shortestJobFirstPreemptive(ReadyQueue *readyQueue) {
     // Keeps loading jobs until there are no more left
     while(readyQueue->head != NULL) {
@@ -131,12 +134,14 @@ void shortestJobFirstPreemptive(ReadyQueue *readyQueue) {
         // Goes for the next job
     }
 }
+*/
 
 /*
  * @author Andres
  * @dev this function takes the job with the best priority from the ready queue and executes it until it finishes
  * @param readyQueue: a queue of structs Job to work on
  * */
+/*
 void highestPriorityFirst(ReadyQueue *readyQueue) {
 // Keeps loading jobs until there are no more left
     while(readyQueue->head != NULL) {
@@ -151,13 +156,14 @@ void highestPriorityFirst(ReadyQueue *readyQueue) {
         endJob(readyQueue, job);
         // Goes for the next job
     }}
-
+*/
 /*
  * @author Andres
  * @dev this function takes the job with the best priority from the ready queue.
  * Since it is preemptive it executes for just 1 time unit, it does not matter if it could finish or not, and checks again
  * @param readyQueue: a queue of structs Job to work on
  * */
+/*
 void highestPriorityPreemptive(ReadyQueue *readyQueue) {
     // Keeps loading jobs until there are no more left
     while(readyQueue->head != NULL) {
@@ -176,7 +182,7 @@ void highestPriorityPreemptive(ReadyQueue *readyQueue) {
         // Goes for the next job
     }
 }
-
+*/
 
 /*
  * @author Andres
@@ -186,6 +192,7 @@ void highestPriorityPreemptive(ReadyQueue *readyQueue) {
  * @param readyQueue: a queue of structs Job to work on
  * @param q, tells the length of the quantum
  * */
+/*
 void roundRobin(ReadyQueue *readyQueue, int q) {
     // Keeps loading jobs until there are no more left
     while(readyQueue->head != NULL) {
@@ -214,7 +221,7 @@ void roundRobin(ReadyQueue *readyQueue, int q) {
         // Goes for the next job
     }
 }
-
+*/
 
 
 #endif //SO_CPU_PLANNER_CPUSCHEDULER_H
