@@ -21,19 +21,25 @@ void endJob(ReadyQueue *readyQueue, PCB *pcb){
  * @dev this function takes the first job of the ready queue and executes it until it finishes
  * @param readyQueue: a queue of structs Job to work on
  * */
-void fifo(ReadyQueue *readyQueue) {
+void fifo(ReadyQueue *readyQueue, WINDOW *output) {
     // Keeps loading jobs until there are no more left
     while(readyQueue->head != NULL) {
         PCB* job = readyQueue->head;  // Takes the first job of the queue
 
+        char message[100];
+        sprintf(message, "\nFIFO [server]: Proceso %d con burst %d y prioridad %d entra en ejecución.", job->pid, job->burst, job->priority);
+        waddstr(output, message);
+        wrefresh(output); 
+
         // Simulates the burst of the process
         while(job->burst > 0){
-            printf("\nSe ejecuto por 1 el proceso %d", job->pid);
             sleep(TIME);  // Simulates it has taken 1 time unit
             job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
         }
+        sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
+        waddstr(output, message);
+        wrefresh(output);
         endJob(readyQueue, job);
-
         // Goes for the next job
     }
 }

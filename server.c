@@ -99,7 +99,7 @@ void *handle_connection(void *arg) {
     int sock_fd = connection->sock_fd;
     int new_socket = connection->new_socket;
     struct Win *win = connection->win;
-+
+
     while(true) {
         Job *job = malloc(sizeof(Job));
         if (recv(sock_fd, job, sizeof(Job), 0) == -1) {
@@ -119,16 +119,30 @@ void *handle_connection(void *arg) {
             char message[100];
             sprintf(message, " Server: Received job with burst = %d, priority = %d, pid = %d", job->burst, job->priority,pid_count);
 
-            werase(win->input);
-            waddch(win->output, '\n');   
-            waddstr(win->output, message);
-            wrefresh(win->output); 
-            mvwprintw(win->input, 0, 0, "Command: ");   
+            //waddstr(win->output, message);
+            //wrefresh(win->output); 
+            //mvwprintw(win->input, 0, 0, "Command: ");   
 
             //printf("Received job with burst = %d, priority = %d\n", job->burst, job->priority);
 
             // here you need to add to the ready queue
             insert(&RQ, pid_count, job->burst, job->priority);
+
+            int q = 2; //////////////////
+
+            if (algor == 1) {
+                fifo(&RQ, win->output);
+            } else if (algor == 2) {
+                shortestJobFirst(&RQ);
+            } else if (algor == 3) {
+                highestPriorityFirst(&RQ);
+            } else if (algor == 4) {
+                roundRobin(&RQ, q);
+            } else {
+                printf("Invalid algorithm\n");
+                algor = 5;
+                return 0;
+            }
 
             //add critical section for incrementing pid like example
             pthread_mutex_lock(&cpu_mutex);
@@ -218,6 +232,7 @@ int main(int argc, char **argv) {
     if (strcmp(algorithm, "FIFO") == 0) {
         printf("FIFO\n");
         algor = 1;
+        //fifo(&RQ);
     } else if (strcmp(algorithm, "SJF") == 0) {
         printf("SJF\n");
         algor = 2;
