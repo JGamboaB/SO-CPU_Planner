@@ -315,19 +315,19 @@ int main(int argc, char **argv) {
         waddstr(win->output, message);
         wrefresh(win->output); 
         mvwprintw(win->input, 0, 0, "Command: ");  
-        fifo(&RQ, output);
+       // fifo(&RQ, output);
     } else if (strcmp(algorithm, "HPF") == 0) {        
         sprintf(message, "Server: HPF\n");
         waddstr(win->output, message);
         wrefresh(win->output); 
         mvwprintw(win->input, 0, 0, "Command: ");  
-        fifo(&RQ, output);
+       // fifo(&RQ, output);
     } else if (strcmp(algorithm, "RR") == 0) {        
         sprintf(message, "Server: RR\n");
         waddstr(win->output, message);
         wrefresh(win->output); 
         mvwprintw(win->input, 0, 0, "Command: ");  
-        fifo(&RQ, output);
+        //fifo(&RQ, output);
     } else {        
         sprintf(message, "Server: Invalid algorithm\n");
         waddstr(win->output, message);
