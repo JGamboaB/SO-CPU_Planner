@@ -40,11 +40,19 @@ void *fifo(void *arg) {
             break;
         }
 
-        while(readyQueue->head == NULL){
-            readyQueue->cpuOcioso++;
+        while(readyQueue->head == NULL){            
             int tempTime = TIMESF;
+            double time = 0;
             while (tempTime == TIMESF){
-                sleep(0.1);
+                if(readyQueue->head != NULL)
+                {
+                    break;
+                }
+                sleep(0.01);
+                time += 0.01;
+            }
+            if(time >= 1){
+                readyQueue->cpuOcioso++;
             }
         }
 

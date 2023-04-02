@@ -130,7 +130,7 @@ void *handle_connection(void *arg) {
             }
 
             if(job->burst == 0 || job->priority == 0){
-                printf("Client desconect\n");
+               //printf("Client desconect\n"); usar ncurses
                 break;
             }
             //char message[100];
@@ -219,7 +219,7 @@ void *window_thread(void *arg) {
             waddstr(output, "\n");            
             wrefresh(output);
 
-            PCB *tmp = FQ.head->next;
+            PCB *tmp = FQ.head;
             int i = 0;
             int sumTAT = 0;
             int sumWT = 0;
