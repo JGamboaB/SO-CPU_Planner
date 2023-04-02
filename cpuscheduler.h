@@ -88,21 +88,15 @@ void *fifo(void *arg) {
                 break;
             }
 
-            
-            /*
-            // Simulates the burst of the process
-            while(job->burst > 0){
-                sleep(ob->burst);  // Simulates it has taken 1 time unit
-                job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
-            }*/
-
-            endJob(readyQueue,FQ, job);
-            
             sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
             waddstr(output, message);
             //mvwprintw(win->input, 0, 0, "Command: ");  
             wrefresh(output);
             // Goes for the next job
+            
+            endJob(readyQueue,FQ, job);
+
+
         }
     }
 }
