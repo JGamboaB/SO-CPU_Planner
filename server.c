@@ -144,12 +144,12 @@ void *handle_connection(void *arg) {
 
             // here you need to add to the ready queue
 
+            insert(&RQ, pid_count, job->burst, job->priority,TIMESF);
+            
             //add critical section for incrementing pid like example
             pthread_mutex_lock(&cpu_mutex);
             pid_count++;
             pthread_mutex_unlock(&cpu_mutex);
-
-            insert(&RQ, pid_count, job->burst, job->priority,TIMESF);
 
             // notify client of the pid
             if (send(sock_fd, &pid_count, sizeof(pid_count), 0) < 0) {
@@ -223,7 +223,7 @@ void *window_thread(void *arg) {
             int i = 0;
             int sumTAT = 0;
             int sumWT = 0;
-            while( i != RQ.finishedJobs){
+            while( i <= RQ.finishedJobs){
                 sprintf(message, "Proceso: %d, TAT: %d, WT: %d", tmp->pid, tmp->turnaroundTime
                 , tmp->waitingTime);          
                 waddstr(output, message);
