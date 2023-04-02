@@ -57,7 +57,7 @@ void *fifo(void *arg) {
 
             // How to print to the window
             char message[100];
-            sprintf(message, "\nFIFO [server]: Proceso %d con burst %d y prioridad %d entra en ejecución.", job->pid, job->burst, job->priority);
+            sprintf(message, "\nFIFO [server]: Proceso %d con burst %d y prioridad %d entra en ejecución en el tiempo %d.", job->pid, job->burst, job->priority, TIMESF);
             waddstr(output, message);
             wrefresh(output); 
             
