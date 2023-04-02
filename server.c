@@ -219,11 +219,11 @@ void *window_thread(void *arg) {
             waddstr(output, "\n");            
             wrefresh(output);
 
-            PCB *tmp = FQ.head;
+            PCB *tmp = FQ.head->next;
             int i = 0;
             int sumTAT = 0;
             int sumWT = 0;
-            while( RQ.finishedJobs != i){
+            while( i != RQ.finishedJobs){
                 sprintf(message, "Proceso: %d, TAT: %d, WT: %d", tmp->pid, tmp->turnaroundTime
                 , tmp->waitingTime);          
                 waddstr(output, message);
