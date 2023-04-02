@@ -120,6 +120,10 @@ void *handle_connection(void *arg) {
             break;       
         } 
         else{
+            int tempTime = TIMESF;
+            while (tempTime == TIMESF){
+                sleep(0.1);
+            }
             
             if (flagRun == 0){
                 break;
