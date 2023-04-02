@@ -142,7 +142,11 @@ void *handle_connection(void *arg) {
 
             pthread_mutex_lock(&win_mutex);
             char message0[100];
-            sprintf(message0, "\n[JS] PID: %d at %d",pid_count, TIMESF);
+            for (int i = 0; i <= COLS/2; i++){
+                waddstr(win->output, " ");
+
+            }
+            sprintf(message0, "[JS] PID: %d at %d\n",pid_count, TIMESF);
             waddstr(win->output, message0);
             wrefresh(win->output); 
             pthread_mutex_unlock(&win_mutex);
@@ -242,7 +246,7 @@ void *window_thread(void *arg) {
                 while( i != RQ.finishedJobs){
                     bzero(message, sizeof(message));
                     pthread_mutex_lock(&win_mutex);
-                    sprintf(message, "Job: %d, TAT: %d, WT: %d, B: ", tmp->pid, tmp->turnaroundTime, tmp->waitingTime, tmp->burst);          
+                    sprintf(message, "Job: %d, TAT: %d, WT: %d, B: %d, RT: %d, ET: %d", tmp->pid, tmp->turnaroundTime, tmp->waitingTime, tmp->burst, tmp->startTime, tmp->endTime);          
                     waddstr(output, message);
                     waddstr(output, "\n");                
                     wrefresh(output);
@@ -381,7 +385,9 @@ int main(int argc, char **argv) {
     input = newwin(1, COLS, LINES - 1, 0);
     output = newwin(LINES - 1, COLS, 0, 0);
     wmove(output, LINES - 2, 0);    /* start at the bottom */
-    scrollok(output, TRUE);    
+    //scroll(output);
+    scrollok(output, TRUE);  
+
     Win *window = (Win *)malloc(sizeof(Win));
     window->input = input;
     window->output = output;  

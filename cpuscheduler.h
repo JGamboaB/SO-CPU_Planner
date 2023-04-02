@@ -60,7 +60,7 @@ void *fifo(void *arg) {
                     // How to print to the window
                     char message[100];
                     pthread_mutex_lock(&win_mutex);
-                    sprintf(message, "\n[CPU]: PID %d start at %d", job->pid, TIMESF);
+                    sprintf(message, "[CPU]: PID %d start at %d\n", job->pid, TIMESF);
                     waddstr(output, message);
                     wrefresh(output); 
                     pthread_mutex_unlock(&win_mutex);
@@ -89,7 +89,7 @@ void *fifo(void *arg) {
 
                     char message2[100];
                     pthread_mutex_lock(&win_mutex);
-                    sprintf(message2, "\n[CPU]: PID %d finished at %d, TAT: %d WT: %d", job->pid, TIMESF, job->turnaroundTime, job->waitingTime);
+                    sprintf(message2, "[CPU]: PID %d finished at %d\n", job->pid, TIMESF);
                     waddstr(output, message2);
                     //mvwprintw(win->input, 0, 0, "Command: ");  
                     wrefresh(output);
