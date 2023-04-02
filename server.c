@@ -48,7 +48,7 @@ typedef struct CPUINFO{
     struct ReadyQueue *RQ;      // Ready Queue
     struct FinishedQueue *FQ;   // Finished Queue
     WINDOW *output;             // output window
-    int rr;
+    int rrQ;
 } CPUINFO;
 
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;

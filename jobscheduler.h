@@ -12,6 +12,7 @@ typedef struct PCB{
     int endTime;
     int waitingTime;
     int turnaroundTime;
+    int burstLeft;
     int finish; //0: ready, 1: finished
     struct PCB* next;
 } PCB;
@@ -36,6 +37,7 @@ PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
     PCB* pcb = (PCB*)malloc(sizeof(PCB));
     pcb->pid = pid;
     pcb->burst = burst;
+    pcb->burstLeft = burst;
     pcb->priority = priority;
     pcb->next = NULL;
     pcb->startTime = starTime;
