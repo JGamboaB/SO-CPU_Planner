@@ -13,12 +13,18 @@
 
 volatile sig_atomic_t stop = 0;
 
-void endJob(ReadyQueue *readyQueue,FinishQueue *FQ, PCB *pcb){    
+void endJob(ReadyQueue *readyQueue,FinishQueue *FQ, PCB *pcb, WINDOW *output){ 
+    printf("\n \n \n burst: %d id: %d\t", pcb->burst, pcb->pid);
     pcb->endTime = TIMESF;
-    pcb->turnaroundTime = pcb->burst ;//(pcb->endTime) - (pcb->startTime);
-    printf("\n \n \n turnaroundTime: %d \t", pcb->burst);
+    pcb->turnaroundTime = pcb->burst;//(pcb->endTime) - (pcb->startTime);
     pcb->waitingTime = (pcb->turnaroundTime) - (pcb->burst);
     readyQueue->finishedJobs++;
+
+    /*char message[100];
+    sprintf(message, "\nProceso %d con TAT %d y WT %d", job->pid, job->turnaroundTime, job->waitingTime);
+    waddstr(output, message);
+    wrefresh(output); */
+
     delete(readyQueue,FQ, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
 }
 
@@ -66,7 +72,7 @@ void *fifo(void *arg) {
 
             // How to print to the window
             char message[100];
-            sprintf(message, "\nFIFO [server]: Proceso %d con burst %d y prioridad %d entra en ejecución en el tiempo %d.", job->pid, job->burst, job->priority, TIMESF);
+            sprintf(message, "\n[CPU]: PID %d start at %d", job->pid, TIMESF);
             waddstr(output, message);
             wrefresh(output); 
             
@@ -88,13 +94,25 @@ void *fifo(void *arg) {
                 break;
             }
 
-            sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
+            sprintf(message, "\n[CPU]: PID %d finished at %d", job->pid, TIMESF);
             waddstr(output, message);
             //mvwprintw(win->input, 0, 0, "Command: ");  
             wrefresh(output);
             // Goes for the next job
             
-            endJob(readyQueue,FQ, job);
+            //endJob(readyQueue, FQ, job, &output);
+            
+        job->endTime = TIMESF;
+        job->turnaroundTime = (job->endTime) - (job->startTime);
+        job->waitingTime = (job->turnaroundTime) - (job->burst);
+        readyQueue->finishedJobs++;
+
+        sprintf(message, "\n[CPU]: PID %d TAT: %d WT: %d", job->pid, job->turnaroundTime, job->waitingTime);
+        waddstr(output, message);
+        wrefresh(output); 
+
+        delete(readyQueue,FQ, job);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
+
 
 
         }

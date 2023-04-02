@@ -65,6 +65,9 @@ void delete(ReadyQueue *RQ,FinishQueue *FQ, PCB *pcb){
     pcb2->priority = pcb->priority;
     pcb2->next = pcb->next;
     pcb2->startTime = pcb->startTime;
+    pcb2->endTime = pcb->endTime; //////
+    pcb2->turnaroundTime = pcb->turnaroundTime; /////
+    pcb2->waitingTime = pcb->waitingTime; /////
     pcb2->finish = 1;
     pthread_mutex_lock(&cpu_mutex);
     if (FQ->head == NULL){ //empty

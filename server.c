@@ -133,11 +133,11 @@ void *handle_connection(void *arg) {
                //printf("Client desconect\n"); usar ncurses
                 break;
             }
-            //char message[100];
-            //sprintf(message, " Server: Received job with burst = %d, priority = %d, pid = %d", job->burst, job->priority,pid_count);
+            char message[100];
+            sprintf(message, "\n[JS] PID: %d at %d",pid_count, TIMESF);
 
-            //waddstr(win->output, message);
-            //wrefresh(win->output); 
+            waddstr(win->output, message);
+            wrefresh(win->output); 
             //mvwprintw(win->input, 0, 0, "Command: ");   
 
             //printf("Received job with burst = %d, priority = %d\n", job->burst, job->priority);
@@ -224,6 +224,7 @@ void *window_thread(void *arg) {
             int sumTAT = 0;
             int sumWT = 0;
             while( i != RQ.finishedJobs){
+                bzero(message, sizeof(message));
                 sprintf(message, "Proceso: %d, TAT: %d, WT: %d", tmp->pid, tmp->turnaroundTime
                 , tmp->waitingTime);          
                 waddstr(output, message);
