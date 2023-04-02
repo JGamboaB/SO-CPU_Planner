@@ -8,15 +8,65 @@
 // #include <unistd.h>  // For sleep
 #include "jobscheduler.h"
 
-#define TIME 1  // Used for processing simulation time
+#define SLEEPTIME 1  // Used for processing simulation time
 
 
+// To kill infinite loops of threads
 volatile sig_atomic_t stop = 0;
 
-void endJob(ReadyQueue *readyQueue, PCB *pcb){
-    //printf("\nTerminado proceso %d", pcb->pid);
-    TIMESF++;
-    delete(readyQueue, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
+
+void getStatistics(ReadyQueue *finishedQueue, WINDOW *output){
+    char message[1000];  // To print to the window
+
+    // To store important values for global statistics
+    int processAmount = 0;
+    int totalTurnaroundTime = 0;
+    int totalWaitingTime = 0;
+
+    // Iterates through the finished queue to get the values of each job to print it and for global statistics statistics
+    PCB *temp = finishedQueue->head;
+    while(temp != NULL){
+        // Prints the statistics of this job
+        sprintf(message, "\nProceso %d: \n\tInicio: %d \n\tFin: %d \n\tTurnaround: %d \n\tWaiting time: %d \n\tPrioridad: %d",
+                temp->pid, temp->startTime, temp->endTime, temp->turnaroundTime, temp->waitingTime, temp->priority);
+
+        // Updates values for global statistics
+        totalTurnaroundTime += temp->turnaroundTime;
+        totalWaitingTime += temp->waitingTime;
+        processAmount++;
+
+        // Goes to the next job
+        temp = temp->next;
+    }
+
+    // Calculates the averages
+    float averageTurnaroundTime = (float)totalTurnaroundTime / (float)processAmount;
+    float averageWaitingTime = (float)totalWaitingTime / (float)processAmount;
+
+    // Prints the global statistics
+    sprintf(message, "\nPromedio turn around: %d \nPromedio waiting time: %d \nCantidad procesos ejecutados: %d \nCPU ocioso: %d",
+            averageTurnaroundTime, averageWaitingTime, processAmount, finishedQueue->cpuOcioso);
+    waddstr(output, message);
+    wrefresh(output);
+}
+
+void endJob(ReadyQueue *readyQueue, ReadyQueue *finishedQueue, PCB *job, WINDOW *output){
+    // Prints that the job finished
+    char message[200];
+    sprintf(message, "\nFIFO [server]: Proceso %d termino.", job->pid);
+    waddstr(output, message);
+    wrefresh(output);
+
+    // Calculates the job statistics
+    job->endTime = TIMESF;
+    job->turnaroundTime = (job->endTime) - (job->startTime);
+    job->waitingTime = (job->turnaroundTime) - (job->burst);
+
+    // The job finished, so is added to the finished queue
+    insertPCB(finishedQueue, job);
+
+    // The job finished, so is removed from the ready queue, this must be the last step because it deletes the pointer from memory
+    delete(readyQueue, job);
 }
 
 
@@ -26,30 +76,38 @@ void endJob(ReadyQueue *readyQueue, PCB *pcb){
  * @param readyQueue: a queue of structs Job to work on
  * */
 void *fifo(void *arg) {
+    // Unpacks the parameters
     CPUINFO *cpuinfo = (CPUINFO *)arg;
     ReadyQueue *readyQueue = cpuinfo->RQ;
+    ReadyQueue *finishedQueue = cpuinfo->FQ;
     WINDOW *output = cpuinfo->output;
 
-    //agregar atributo ReadyQueue cpuOcioso
-    while(true){
+    // Infinite loop to keep checking if constantly in the thread
+    while(1){
+        // To kill the infinite loop
         if(stop){
             break;
         }
 
+        // There are no jobs, waits until there is a job in the queue
         while(readyQueue->head == NULL){
-            readyQueue->cpuOcioso++;
-            sleep(TIME);
+            // Simulates idle time
+            finishedQueue->cpuOcioso++;
+            sleep(SLEEPTIME);
         }
 
-        // Keeps loading jobs until there are no more left
+        // Detected a job, eeps loading jobs until there are no more left
         while(readyQueue->head != NULL) {
+            // To kill the infinite loop
             if(stop){
                 break;
             }
+
+            // Algorithm starts here
             PCB* job = readyQueue->head;  // Takes the first job of the queue
 
             // How to print to the window
-            char message[100];
+            char message[200];
             sprintf(message, "\nFIFO [server]: Proceso %d con burst %d y prioridad %d entra en ejecución.", job->pid, job->burst, job->priority);
             waddstr(output, message);
             wrefresh(output); 
@@ -57,19 +115,9 @@ void *fifo(void *arg) {
             // Simulates the burst of the process
             sleep(job->burst);
 
-            /*
-            // Simulates the burst of the process
-            while(job->burst > 0){
-                sleep(ob->burst);  // Simulates it has taken 1 time unit
-                job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
-            }*/
+            // The job finished, so is removed from the queue
+            endJob(readyQueue, finishedQueue, job, output);
 
-            sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
-            waddstr(output, message);
-            //mvwprintw(win->input, 0, 0, "Command: ");  
-            wrefresh(output);
-
-            endJob(readyQueue, job);
             // Goes for the next job
         }
     }
@@ -88,7 +136,7 @@ void shortestJobFirst(ReadyQueue *readyQueue) {
         // Simulates the burst of the process
         while(job->burst > 0){
             printf("\nSe ejecuto por 1 el proceso %d", job->pid);
-            sleep(TIME);  // Simulates it has taken 1 time unit
+            sleep(SLEEPTIME);  // Simulates it has taken 1 time unit
             job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
         }
         endJob(readyQueue, job);
@@ -109,7 +157,7 @@ void shortestJobFirstPreemptive(ReadyQueue *readyQueue) {
 
         // We cannot execute all the burst, we must go 1 by 1 to check if one with a highest priority came
         printf("\nSe ejecuto por 1 el proceso %d", job->pid);
-        sleep(TIME);  // Simulates it has taken 1 time unit
+        sleep(SLEEPTIME);  // Simulates it has taken 1 time unit
         job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
 
         // Checks if the job ended or still has burst to execute
@@ -134,7 +182,7 @@ void highestPriorityFirst(ReadyQueue *readyQueue) {
         // Simulates the burst of the process
         while(job->burst > 0){
             printf("\nSe ejecuto por 1 el proceso %d", job->pid);
-            sleep(TIME);  // Simulates it has taken 1 time unit
+            sleep(SLEEPTIME);  // Simulates it has taken 1 time unit
             job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
         }
         endJob(readyQueue, job);
@@ -154,7 +202,7 @@ void highestPriorityPreemptive(ReadyQueue *readyQueue) {
 
         // We cannot execute all the burst, we must go 1 by 1 to check if one with a highest priority came
         printf("\nSe ejecuto por 1 el proceso %d", job->pid);
-        sleep(TIME);  // Simulates it has taken 1 time unit
+        sleep(SLEEPTIME);  // Simulates it has taken 1 time unit
         job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
 
         // Checks if the job ended or still has burst to execute
@@ -184,7 +232,7 @@ void roundRobin(ReadyQueue *readyQueue, int q) {
         // Simulates the burst of the quantum
         for (int i = 0; i < q; i++) {
             printf("\nSe ejecuto por 1 el proceso %d", job->pid);
-            sleep(TIME);  // Simulates it has taken 1 time unit
+            sleep(SLEEPTIME);  // Simulates it has taken 1 time unit
             job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
 
             // Checks if the process ended

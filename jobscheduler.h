@@ -12,6 +12,7 @@ typedef struct PCB{
     int endTime;
     int waitingTime;
     int turnaroundTime;
+    int timeLeft;
     struct PCB* next;
 } PCB;
 
@@ -27,6 +28,7 @@ PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
     PCB* pcb = (PCB*)malloc(sizeof(PCB));
     pcb->pid = pid;
     pcb->burst = burst;
+    pcb->timeLeft = burst;
     pcb->priority = priority;
     pcb->next = NULL;
     pcb->startTime = starTime;
@@ -46,6 +48,36 @@ PCB* insert(ReadyQueue *RQ, int pid, int burst, int priority, int starTime){
     pthread_mutex_unlock(&cpu_mutex);
     return pcb;
 }
+
+PCB* insertPCB(ReadyQueue *RQ, PCB *otherPcb){
+    PCB* pcb = (PCB*)malloc(sizeof(PCB));
+
+    pcb->pid = otherPcb->pid;
+    pcb->burst = otherPcb->burst;
+    pcb->priority = otherPcb->priority;
+    pcb->next = NULL;
+    pcb->startTime = otherPcb->startTime;
+    pcb->endTime = otherPcb->endTime;
+    pcb->waitingTime = otherPcb->waitingTime;
+    pcb->turnaroundTime = otherPcb->turnaroundTime;
+
+    pthread_mutex_lock(&cpu_mutex);
+    if (RQ->head == NULL){ //empty
+        RQ->head = pcb;
+        RQ->last = pcb;
+    } else {
+        if (RQ->head->next == NULL){ //only 1 element in RQ
+            RQ->head->next = pcb;
+            RQ->last = pcb;
+        } else {
+            RQ->last->next = pcb;
+            RQ->last = pcb;
+        }
+    }
+    pthread_mutex_unlock(&cpu_mutex);
+    return pcb;
+}
+
 
 void delete(ReadyQueue *RQ, PCB *pcb){
     pthread_mutex_lock(&cpu_mutex);
@@ -68,7 +100,7 @@ void delete(ReadyQueue *RQ, PCB *pcb){
         if (tmp->next == pcb){
             tmp->next = pcb->next;
             if (pcb->next == NULL)
-                RQ->last == pcb;
+                RQ->last = pcb;
             free(pcb);
             pthread_mutex_unlock(&cpu_mutex);
             return;

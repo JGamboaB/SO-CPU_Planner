@@ -46,13 +46,15 @@ typedef struct Connection{
 // Send info CPU
 typedef struct CPUINFO{    
     struct ReadyQueue *RQ;      // Ready Queue
+    struct ReadyQueue *FQ;      // Finished Queue
     WINDOW *output;             // output window
     int rr;
 } CPUINFO;
 
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
 #include "cpuscheduler.h"
-ReadyQueue RQ = {NULL, NULL};
+ReadyQueue RQ = {0, NULL, NULL};
+ReadyQueue FQ = {0, NULL, NULL};
 
 int create_server_socket(){
     int server_fd = 0;
@@ -215,6 +217,7 @@ void *window_thread(void *arg) {
             • Promedio de Turn Around Time
             */
             wrefresh(output);
+            getStatistics(FQ, output)
         }
          else {    
             sprintf(buffer, "%s\n", bufferWin);
@@ -303,6 +306,7 @@ int main(int argc, char **argv) {
     pthread_t cpu_id;
     CPUINFO *cpuinf = (CPUINFO *)malloc(sizeof(CPUINFO));
     cpuinf->RQ = &RQ;
+    cpuinf->FQ = &FQ;
     cpuinf->output = output;
 
     char message[100];
