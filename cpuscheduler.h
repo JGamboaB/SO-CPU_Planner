@@ -42,7 +42,10 @@ void *fifo(void *arg) {
 
         while(readyQueue->head == NULL){
             readyQueue->cpuOcioso++;
-            sleep(TIME);
+            int tempTime = TIMESF;
+            while (tempTime == TIMESF){
+                sleep(0.1);
+            }
         }
 
         // Keeps loading jobs until there are no more left
@@ -59,7 +62,18 @@ void *fifo(void *arg) {
             wrefresh(output); 
             
             // Simulates the burst of the process
-            sleep(job->burst);
+            // sleep(job->burst);
+            int i = 0;
+            while(i < job->burst){
+                if(stop){
+                    break;
+                }
+                int tempTime2 = TIMESF;
+                while (tempTime2 == TIMESF){
+                    sleep(0.1);
+                }
+                i++;
+            }
 
             if(stop){
                 break;
