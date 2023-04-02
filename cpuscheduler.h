@@ -15,7 +15,7 @@ volatile sig_atomic_t stop = 0;
 
 void endJob(ReadyQueue *readyQueue,FinishQueue *FQ, PCB *pcb){    
     pcb->endTime = TIMESF;
-    pcb->turnaroundTime = (pcb->endTime) - (pcb->startTime);
+    pcb->turnaroundTime = pcb->burst;//(pcb->endTime) - (pcb->startTime);
     pcb->waitingTime = (pcb->turnaroundTime) - (pcb->burst);
     readyQueue->finishedJobs++;
     delete(readyQueue,FQ, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue

@@ -223,7 +223,7 @@ void *window_thread(void *arg) {
             int i = 0;
             int sumTAT = 0;
             int sumWT = 0;
-            while( i <= RQ.finishedJobs){
+            while( i != RQ.finishedJobs){
                 sprintf(message, "Proceso: %d, TAT: %d, WT: %d", tmp->pid, tmp->turnaroundTime
                 , tmp->waitingTime);          
                 waddstr(output, message);
