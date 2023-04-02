@@ -95,7 +95,7 @@ void *fifo(void *arg) {
                 job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
             }*/
 
-            sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
+            sprintf(message, "\nFIFO [server]: Proceso %d terminó un burst de %d", job->pid, job->burst);
             waddstr(output, message);
             //mvwprintw(win->input, 0, 0, "Command: ");  
             wrefresh(output);
