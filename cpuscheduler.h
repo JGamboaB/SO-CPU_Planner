@@ -13,22 +13,6 @@
 
 volatile sig_atomic_t stop = 0;
 
-void endJob(ReadyQueue *readyQueue,FinishQueue *FQ, PCB *pcb, WINDOW *output){ 
-    printf("\n \n \n burst: %d id: %d\t", pcb->burst, pcb->pid);
-    pcb->endTime = TIMESF;
-    pcb->turnaroundTime = pcb->burst;//(pcb->endTime) - (pcb->startTime);
-    pcb->waitingTime = (pcb->turnaroundTime) - (pcb->burst);
-    readyQueue->finishedJobs++;
-
-    /*char message[100];
-    sprintf(message, "\nProceso %d con TAT %d y WT %d", job->pid, job->turnaroundTime, job->waitingTime);
-    waddstr(output, message);
-    wrefresh(output); */
-
-    delete(readyQueue,FQ, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
-}
-
-
 /*
  * @author Andres
  * @dev this function takes the first job of the ready queue and executes it until it finishes
@@ -40,83 +24,90 @@ void *fifo(void *arg) {
     FinishQueue *FQ = cpuinfo->FQ;
     WINDOW *output = cpuinfo->output;
 
-
-    //agregar atributo ReadyQueue cpuOcioso
     while(true){
-        if(stop){
-            break;
-        }
-
-        while(readyQueue->head == NULL){            
-            int tempTime = TIMESF;
-            double time = 0;
-            while (tempTime == TIMESF){
-                if(readyQueue->head != NULL)
-                {
-                    break;
-                }
-                sleep(0.01);
-                time += 0.01;
-            }
-            if(time >= 1){
-                readyQueue->cpuOcioso++;
-            }
-        }
-
-        // Keeps loading jobs until there are no more left
-        while(readyQueue->head != NULL) {
-            if(stop){
-                break;
-            }
-            PCB* job = readyQueue->head;  // Takes the first job of the queue
-
-            // How to print to the window
-            char message[100];
-            sprintf(message, "\n[CPU]: PID %d start at %d", job->pid, TIMESF);
-            waddstr(output, message);
-            wrefresh(output); 
-            
-            // Simulates the burst of the process
-            // sleep(job->burst);
-            int i = 0;
-            while(i < job->burst){
+        if (stop){
+            sleep(1);
+        } else {
+            //agregar atributo ReadyQueue cpuOcioso
+            while(true){
                 if(stop){
                     break;
                 }
-                int tempTime2 = TIMESF;
-                while (tempTime2 == TIMESF){
-                    sleep(0.1);
+
+                while(readyQueue->head == NULL){            
+                    int tempTime = TIMESF;
+                    double time = 0;
+                    while (tempTime == TIMESF){
+                        if(readyQueue->head != NULL)
+                        {
+                            break;
+                        }
+                        sleep(0.01);
+                        time += 0.01;
+                    }
+                    if(time >= 1){
+                        readyQueue->cpuOcioso++;
+                    }
                 }
-                i++;
+
+                // Keeps loading jobs until there are no more left
+                while(readyQueue->head != NULL) {
+                    if(stop){
+                        break;
+                    }
+                    PCB* job = readyQueue->head;  // Takes the first job of the queue
+
+                    // How to print to the window
+                    char message[100];
+                    pthread_mutex_lock(&win_mutex);
+                    sprintf(message, "\n[CPU]: PID %d start at %d", job->pid, TIMESF);
+                    waddstr(output, message);
+                    wrefresh(output); 
+                    pthread_mutex_unlock(&win_mutex);
+                    // Simulates the burst of the process
+                    // sleep(job->burst);
+                    int i = 0;
+                    while(i < job->burst){
+                        if(stop){
+                            break;
+                        }
+                        int tempTime2 = TIMESF;
+                        while (tempTime2 == TIMESF){
+                            sleep(0.1);
+                        }
+                        i++;
+                    }
+
+                    if(stop){
+                        break;
+                    }
+
+                    job->endTime = TIMESF;
+                    job->turnaroundTime = (job->endTime) - (job->startTime);
+                    job->waitingTime = (job->turnaroundTime) - (job->burst);
+                    readyQueue->finishedJobs++;
+
+                    char message2[100];
+                    pthread_mutex_lock(&win_mutex);
+                    sprintf(message2, "\n[CPU]: PID %d finished at %d, TAT: %d WT: %d", job->pid, TIMESF, job->turnaroundTime, job->waitingTime);
+                    waddstr(output, message2);
+                    //mvwprintw(win->input, 0, 0, "Command: ");  
+                    wrefresh(output);
+                    pthread_mutex_unlock(&win_mutex);
+                    // Goes for the next job
+                    
+                    //endJob(readyQueue, FQ, job, &output);
+
+                    delete(readyQueue,FQ, job);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
+
+
+
+                }
             }
-
-            if(stop){
-                break;
-            }
-
-            sprintf(message, "\n[CPU]: PID %d finished at %d", job->pid, TIMESF);
-            waddstr(output, message);
-            //mvwprintw(win->input, 0, 0, "Command: ");  
-            wrefresh(output);
-            // Goes for the next job
-            
-            //endJob(readyQueue, FQ, job, &output);
-            
-        job->endTime = TIMESF;
-        job->turnaroundTime = (job->endTime) - (job->startTime);
-        job->waitingTime = (job->turnaroundTime) - (job->burst);
-        readyQueue->finishedJobs++;
-
-        sprintf(message, "\n[CPU]: PID %d TAT: %d WT: %d", job->pid, job->turnaroundTime, job->waitingTime);
-        waddstr(output, message);
-        wrefresh(output); 
-
-        delete(readyQueue,FQ, job);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
-
-
-
         }
     }
+
+    
 }
 
 /*

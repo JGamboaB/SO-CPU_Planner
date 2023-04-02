@@ -21,7 +21,7 @@
 int pid_count = 0;
 volatile sig_atomic_t flagRun = 1;
 volatile sig_atomic_t algor = 0;
-
+char *algorithm; 
 static _Atomic int TIMESF = 0;
 
 
@@ -52,6 +52,8 @@ typedef struct CPUINFO{
 } CPUINFO;
 
 pthread_mutex_t cpu_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t win_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 #include "cpuscheduler.h"
 ReadyQueue RQ = {NULL, NULL};
 FinishQueue FQ = {NULL, NULL};
@@ -133,11 +135,18 @@ void *handle_connection(void *arg) {
                //printf("Client desconect\n"); usar ncurses
                 break;
             }
-            char message[100];
-            sprintf(message, "\n[JS] PID: %d at %d",pid_count, TIMESF);
 
-            waddstr(win->output, message);
+            while (stop){
+                sleep(1);
+            }
+
+            pthread_mutex_lock(&win_mutex);
+            char message0[100];
+            sprintf(message0, "\n[JS] PID: %d at %d",pid_count, TIMESF);
+            waddstr(win->output, message0);
             wrefresh(win->output); 
+            pthread_mutex_unlock(&win_mutex);
+
             //mvwprintw(win->input, 0, 0, "Command: ");   
 
             //printf("Received job with burst = %d, priority = %d\n", job->burst, job->priority);
@@ -178,12 +187,14 @@ void *window_thread(void *arg) {
             break;
         }
 
+        pthread_mutex_lock(&win_mutex);
         werase(input);
         waddch(output, '\n');   /* result from wgetnstr has no newline */
         waddstr(output, "Server");
         waddstr(output, ": ");
         waddstr(output, bufferWin);
         wrefresh(output);
+        pthread_mutex_unlock(&win_mutex);
         done = (*bufferWin == 4);  /* quit on control-D */
 
         // Here you put the commands
@@ -195,56 +206,104 @@ void *window_thread(void *arg) {
             break;
         }
         else if (strcmp(bufferWin, "help") == 0) {
-            //sprintf(buffer, "%s\n", bufferWin);
-            werase(input);
-            waddch(output, '\n');   /* result from wgetnstr has no newline */
-            waddstr(output, "Help ---------------------");
-            waddstr(output, ": \n");
-            waddstr(output, "Command help");
+            pthread_mutex_lock(&win_mutex);
+            waddstr(output, "\n\nHelp ---------------------:\n");
+            waddstr(output, "\n\t'help': Display available commands");
+            waddstr(output, "\n\t'stop': Stop CPU and display information");
+            waddstr(output, "\n\t'queue': Consult Ready Queue");  
+            waddstr(output, "\n\t'restart': Restart Program");  
+            waddstr(output, "\n\t'exit': Stop Server\n");          
             wrefresh(output);
+            pthread_mutex_unlock(&win_mutex);
         }
         else if (strcmp(bufferWin, "stop") == 0) {
             //sprintf(buffer, "%s\n", bufferWin);
             stop = 1;
+
+            pthread_mutex_lock(&win_mutex);
             werase(input);
             waddch(output, '\n');   /* result from wgetnstr has no newline */
-            waddstr(output, "Stop CPU");
-            waddstr(output, ": \n");
+            waddstr(output, "\nStop CPU:\n");
             char message[100];
-            sprintf(message, "Cantidad de procesos ejecutados: %d", RQ.finishedJobs);            
+            sprintf(message, "\n# of jobs executed: %d", RQ.finishedJobs);            
             waddstr(output, message);
             waddstr(output, "\n");
-            sprintf(message, "Cantidad de segundos con CPU ocioso: %d", RQ.cpuOcioso);          
+            sprintf(message, "Time in secs of idle CPU: %d", RQ.cpuOcioso);          
             waddstr(output, message);
             waddstr(output, "\n");            
             wrefresh(output);
+            pthread_mutex_unlock(&win_mutex);
 
-            PCB *tmp = FQ.head;
-            int i = 0;
-            int sumTAT = 0;
-            int sumWT = 0;
-            while( i != RQ.finishedJobs){
-                bzero(message, sizeof(message));
-                sprintf(message, "Proceso: %d, TAT: %d, WT: %d", tmp->pid, tmp->turnaroundTime
-                , tmp->waitingTime);          
+            if (RQ.finishedJobs != 0){
+                PCB *tmp = FQ.head;
+                int i = 0;
+                int sumTAT = 0;
+                int sumWT = 0;
+                while( i != RQ.finishedJobs){
+                    bzero(message, sizeof(message));
+                    pthread_mutex_lock(&win_mutex);
+                    sprintf(message, "Job: %d, TAT: %d, WT: %d, B: ", tmp->pid, tmp->turnaroundTime, tmp->waitingTime, tmp->burst);          
+                    waddstr(output, message);
+                    waddstr(output, "\n");                
+                    wrefresh(output);
+                    pthread_mutex_unlock(&win_mutex);
+                    usleep(500000);
+                    sumTAT += tmp->turnaroundTime;
+                    sumWT += tmp->waitingTime;
+                    i++;
+                    tmp = tmp->next;
+                }
+                pthread_mutex_lock(&win_mutex);
+                sprintf(message, "------------------");
                 waddstr(output, message);
-                waddstr(output, "\n");                
+                sprintf(message, "\nAVG. WAT: %d", sumWT/i);
+                waddstr(output, message);
+                waddstr(output, "\n");
+                sprintf(message, "AVG. TAT: %d", sumTAT/i);
+                waddstr(output, message);
+                waddstr(output, "\n");
                 wrefresh(output);
-                sleep(1);
-                sumTAT += tmp->turnaroundTime;
-                sumWT += tmp->waitingTime;
-                i++;
+                pthread_mutex_unlock(&win_mutex);
+            }
+
+        } else if (strcmp(bufferWin, "queue") == 0) {
+            int before = 0;
+            if (stop){
+                before = 1;
+            }
+            stop = 1;
+
+            pthread_mutex_lock(&win_mutex);
+            waddch(output, '\n');   /* result from wgetnstr has no newline */
+            waddstr(output, "\nReady Queue");
+            waddstr(output, ": \n");
+            pthread_mutex_unlock(&win_mutex);
+
+            char message[100];
+
+            PCB *tmp = RQ.head;
+
+            while( tmp != NULL){
+                bzero(message, sizeof(message));
+                pthread_mutex_lock(&win_mutex);
+                sprintf(message, "\n\t\t\tPID: %d, Burst: %d, Priority: %d", tmp->pid, tmp->burst, tmp->priority);          
+                waddstr(output, message);              
+                wrefresh(output);
+                pthread_mutex_unlock(&win_mutex);
+                usleep(500000);
                 tmp = tmp->next;
             }
-            sprintf(message, "Promedio de Waiting Time: %d", sumWT/i);
-            waddstr(output, message);
-            waddstr(output, "\n");
-            sprintf(message, "Promedio de Turn Around Time: %d", sumTAT/i);
-            waddstr(output, message);
             waddstr(output, "\n");
             wrefresh(output);
-        }
-         else {    
+
+            stop = before;
+        } else if (strcmp(bufferWin, "restart") == 0) {
+            pthread_mutex_lock(&win_mutex);
+            waddch(output, '\n');   /* result from wgetnstr has no newline */
+            waddstr(output, "\nCPU Restarted\n------------------\n");
+            pthread_mutex_unlock(&win_mutex);
+            stop = 0;
+        } else {    
             sprintf(buffer, "%s\n", bufferWin);
             // send(socketfd, buffer, strlen(buffer), 0);
         }
@@ -262,12 +321,19 @@ void *window_thread(void *arg) {
 
 
 void *start_time_thread(void *arg) {
+    while(stop){
+        sleep(1);
+    }
+
     while(stop == 0){
         sleep(1);
         pthread_mutex_lock(&cpu_mutex);
         TIMESF++;
         pthread_mutex_unlock(&cpu_mutex);
     }  
+
+    pthread_t time_id;
+    pthread_create(&time_id, NULL, start_time_thread, NULL);
 
 	pthread_detach(pthread_self());
 }   
@@ -283,7 +349,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	char *algorithm = argv[1];    
+	algorithm = argv[1];    
 
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -337,7 +403,7 @@ int main(int argc, char **argv) {
     char message[100];
     // cases for the different algorithms and compare the text
     if (strcmp(algorithm, "FIFO") == 0) {        
-        sprintf(message, "Server: FIFO\n");
+        sprintf(message, "\nServer: FIFO\n");
         waddstr(output, message);
         wrefresh(output); 
         mvwprintw(input, 0, 0, "Command: ");  
