@@ -15,7 +15,8 @@ volatile sig_atomic_t stop = 0;
 
 void endJob(ReadyQueue *readyQueue,FinishQueue *FQ, PCB *pcb){    
     pcb->endTime = TIMESF;
-    pcb->turnaroundTime = pcb->burst;//(pcb->endTime) - (pcb->startTime);
+    pcb->turnaroundTime = pcb->burst ;//(pcb->endTime) - (pcb->startTime);
+    printf("\n \n \n turnaroundTime: %d \t", pcb->burst);
     pcb->waitingTime = (pcb->turnaroundTime) - (pcb->burst);
     readyQueue->finishedJobs++;
     delete(readyQueue,FQ, pcb);  // The job finished, so is removed from the queue delete(readyQueue, job);  // The job finished, so is removed from the queue
@@ -95,7 +96,7 @@ void *fifo(void *arg) {
                 job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
             }*/
 
-            sprintf(message, "\nFIFO [server]: Proceso %d terminó un burst de %d", job->pid, job->burst);
+            sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
             waddstr(output, message);
             //mvwprintw(win->input, 0, 0, "Command: ");  
             wrefresh(output);
