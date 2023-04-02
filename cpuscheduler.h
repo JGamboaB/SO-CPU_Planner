@@ -96,12 +96,12 @@ void *fifo(void *arg) {
                 job->burst--;  // Since it has advanced, the process is 1 unit closer to end so its burst has to decrease
             }*/
 
+            endJob(readyQueue,FQ, job);
+            
             sprintf(message, "\nFIFO [server]: Proceso %d terminó.", job->pid);
             waddstr(output, message);
             //mvwprintw(win->input, 0, 0, "Command: ");  
             wrefresh(output);
-
-            endJob(readyQueue,FQ, job);
             // Goes for the next job
         }
     }
