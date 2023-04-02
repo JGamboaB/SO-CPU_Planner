@@ -396,7 +396,7 @@ void roundRobin(void *arg) {
                         }
                         int tempTime2 = TIMESF;
                         while (tempTime2 == TIMESF){
-                            sleep(0.1);
+                            usleep(100000);
                         }
                         i++;
 
@@ -433,6 +433,14 @@ void roundRobin(void *arg) {
 
                     } else {  // The job could not finish in the quantum, has to stay in the queue and wait for the next quantum
                         // Moves the job from head to last
+                        char messageRR[100];
+                        pthread_mutex_lock(&win_mutex);
+                        sprintf(messageRR, "[CPU]: PID %d with Burst Left %d\n", job->pid, job->burstLeft);
+                        waddstr(output, messageRR);
+                        //mvwprintw(win->input, 0, 0, "Command: ");
+                        wrefresh(output);
+                        pthread_mutex_unlock(&win_mutex);
+
                         moveFirstToLast(readyQueue);
                     }
 

@@ -215,7 +215,9 @@ void *window_thread(void *arg) {
             waddstr(output, "\n\t'help': Display available commands");
             waddstr(output, "\n\t'stop': Stop CPU and display information");
             waddstr(output, "\n\t'queue': Consult Ready Queue");  
-            waddstr(output, "\n\t'restart': Restart Program");  
+            waddstr(output, "\n\t'restart': Restart Program"); 
+            waddstr(output, "\n\t'freeze': Freeze the screen");  
+            waddstr(output, "\n\t'unfreeze': Unfreeze the screen");  
             waddstr(output, "\n\t'exit': Stop Server\n");          
             wrefresh(output);
             pthread_mutex_unlock(&win_mutex);
@@ -246,7 +248,7 @@ void *window_thread(void *arg) {
                 while( i != RQ.finishedJobs){
                     bzero(message, sizeof(message));
                     pthread_mutex_lock(&win_mutex);
-                    sprintf(message, "Job: %d, TAT: %d, WT: %d, B: %d, RT: %d, ET: %d", tmp->pid, tmp->turnaroundTime, tmp->waitingTime, tmp->burst, tmp->startTime, tmp->endTime);          
+                    sprintf(message, "Job: %d, TAT: %d, WT: %d, B: %d, P: %d, AT: %d, ET: %d", tmp->pid, tmp->turnaroundTime, tmp->waitingTime, tmp->burst, tmp->priority, tmp->startTime, tmp->endTime);          
                     waddstr(output, message);
                     waddstr(output, "\n");                
                     wrefresh(output);
@@ -290,7 +292,7 @@ void *window_thread(void *arg) {
             while( tmp != NULL){
                 bzero(message, sizeof(message));
                 pthread_mutex_lock(&win_mutex);
-                sprintf(message, "\n\t\t\tPID: %d, Burst: %d, Priority: %d", tmp->pid, tmp->burst, tmp->priority);          
+                sprintf(message, "\n\t\t\tPID: %d, Burst: %d, Priority: %d, AT: %d", tmp->pid, tmp->burst, tmp->priority, tmp->startTime);          
                 waddstr(output, message);              
                 wrefresh(output);
                 pthread_mutex_unlock(&win_mutex);
@@ -305,9 +307,23 @@ void *window_thread(void *arg) {
             pthread_mutex_lock(&win_mutex);
             waddch(output, '\n');   /* result from wgetnstr has no newline */
             waddstr(output, "\nCPU Restarted\n------------------\n");
+            wrefresh(output);
             pthread_mutex_unlock(&win_mutex);
             stop = 0;
-        } else {    
+        } else if (strcmp(bufferWin, "freeze") == 0) {
+            pthread_mutex_lock(&win_mutex);
+            waddch(output, '\n');   /* result from wgetnstr has no newline */
+            wrefresh(output);
+            pthread_mutex_unlock(&win_mutex);
+            stop = 1;
+
+        } else if (strcmp(bufferWin, "unfreeze") == 0) {
+            pthread_mutex_lock(&win_mutex);
+            waddch(output, '\n');   /* result from wgetnstr has no newline */
+            wrefresh(output);
+            pthread_mutex_unlock(&win_mutex);
+            stop = 0;
+        }else {    
             sprintf(buffer, "%s\n", bufferWin);
             // send(socketfd, buffer, strlen(buffer), 0);
         }
@@ -419,21 +435,22 @@ int main(int argc, char **argv) {
         waddstr(output, message);
         wrefresh(output); 
         mvwprintw(input, 0, 0, "Command: ");  
-       // fifo(&RQ, output);
+        pthread_create(&cpu_id, NULL, shortestJobFirst, (void*)cpuinf);     
     } else if (strcmp(algorithm, "HPF") == 0) {        
         sprintf(message, "Server: HPF\n");
         waddstr(output, message);
         wrefresh(output); 
         mvwprintw(input, 0, 0, "Command: ");  
-       // fifo(&RQ, output);
+        pthread_create(&cpu_id, NULL, highestPriorityFirst, (void*)cpuinf); 
     } else if (strcmp(algorithm, "RR") == 0) { 
         
-        int rrQ = atoi(argv[2]);           
+        int rrQ = atoi(argv[2]);         
+        cpuinf->rrQ = rrQ;  
         sprintf(message, "Server: RR\n");
         waddstr(output, message);
         wrefresh(output); 
         mvwprintw(input, 0, 0, "Command: ");  
-        //fifo(&RQ, output);
+        pthread_create(&cpu_id, NULL, roundRobin, (void*)cpuinf);
     } else {        
         sprintf(message, "Server: Invalid algorithm\n");
         waddstr(output, message);
