@@ -1,0 +1,6 @@
+BURST Prioridad
+20 3
+15 1
+10 3
+4 4
+8 2
