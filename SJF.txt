@@ -2,3 +2,5 @@ BURST Prioridad
 20 5
 15 3
 17 1
+18 2
+10 4

@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <errno.h>   // for errno
+#include <time.h>
 
 #define PORT 8080
 
@@ -54,6 +55,10 @@ void connect_to_server(int sock_fd, struct sockaddr_in serv_addr) {
 
 
 void *send_job_aut(void *arg){
+    time_t current_time;
+    time(&current_time); 
+    srand(current_time);
+
     Procs *procs = (Procs *)arg;
     Job job = {rand() % procs->maxBu + 1, rand() % 5 + 1};
 

@@ -98,8 +98,10 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    while (fgets(line, sizeof(line), fp)) {
+    while (!feof(fp)) {
+        fgets(line, sizeof(line), fp);
         line[strcspn(line, "\n")] = '\0'; // remove newline character
+        //printf("%s\n", line);
         
         if(isdigit(line[0])){
             //printf("%s\n", line);
@@ -127,7 +129,7 @@ int main(int argc, char **argv) {
         }
         
     }
-
+    sleep(12);
     fclose(fp);
 
     close(sock_fd);
